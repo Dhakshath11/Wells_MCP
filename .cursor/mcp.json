@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "wells-mcp": {
+      "command": "npx",
+      "args": ["-y","tsx", "src/main.ts"],
+      "env": {},
+      "cwd": ".",
+      "description": "MCP server for Wells on hyperexecute tool - provides tools for managing and analyzing HyperExecute CLI operations"
+    }
+  }
+}

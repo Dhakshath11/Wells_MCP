@@ -1,0 +1,235 @@
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { z } from "zod";
+import { exec } from "child_process";
+import util from "util";
+import { normalize, NormalizedPattern } from "./normalizer";
+import { parseAnalysisLog, AnalysisOutput } from "./analyzer";
+
+const server = new McpServer({
+  name: "Hyperexecute-Wells Tool",
+  version: "1.0.0"
+});
+
+const execAsync = util.promisify(exec);
+
+// Return type to tool would be "text, image, audio or resource"
+// Tool to check if CLI is present
+server.tool(
+  "check-hyperexecute-cli-present",
+  "Check if hyperexecute CLI exists in the framework repo. Should be called before running analyze or downloading CLI.",
+  {},
+  async () => {
+    try {
+      const { stdout, stderr } = await execAsync("find . -name '*hyperexecute*'");
+      let message: string;
+
+      if (stderr) {
+        message = `stderr while checking for hyperexecute CLI: ${stderr}`;
+      } else if (stdout.trim()) {
+        message = `Yes, hyperexecute CLI is present. Suspected files:\n${stdout}`;
+      } else {
+        message = `Oops, hyperexecute CLI is not present in the framework repo. Please download it.`;
+      }
+
+      return {
+        content: [{
+          type: "text",
+          text: message
+        }]
+      };
+    } catch (error: any) {
+      console.error(error.message); // Log the error for debugging - you can see it in MCP inpsector bottom-left
+      return {
+        content: [{
+          type: "text",
+          text: `Error occurred while checking for hyperexecute CLI: ${error.message}`
+        }]
+      };
+    }
+  }
+);
+
+// Tool to download the CLI
+server.tool(
+  "get-hyperexecute-cli",
+  "Download hyperexecute CLI. Should only be called if 'hyperexecute-cli-present?' reports missing CLI.",
+  {},
+  async () => {
+    try {
+      // Curl command will always return stderr, not stdout. Hence not checking stdout.
+      const { stderr } = await execAsync(
+        "curl -s -O https://downloads.lambdatest.com/hyperexecute/darwin/hyperexecute"
+      );
+
+      return {
+        content: [{
+          type: "text",
+          text: `Downloaded the file, here is Response: ${stderr}`
+        }]
+      };
+
+    } catch (error: any) {
+      return {
+        content: [{
+          type: "text",
+          text: `Error in downloading, here is Response: ${error.message}`
+        }]
+      };
+    }
+  }
+);
+
+// server.tool(
+//   "get-hyperexecute-cli",
+//   "Download hyperexecute CLI. Should only be called if 'hyperexecute-cli-present?' reports missing CLI.",
+//   {},
+//   async () => {
+//     try {
+//       // Curl command will always return stderr, not stdout. Hence not checking stdout.
+//       const { stderr } = exec(
+//         "curl -s -O https://downloads.lambdatest.com/hyperexecute/darwin/hyperexecute"
+//       );
+//       return {
+//         content: [{
+//           type: "text",
+//           text: `Downloading the file, Please wait for sometime to complete.`
+//         }]
+//       };
+
+//     } catch (error: any) {
+//       return {
+//         content: [{
+//           type: "text",
+//           text: `Error in downloading, here is Response: ${error.message}`
+//         }]
+//       };
+//     }
+//   }
+// );
+
+server.tool(
+  "run-hyperexecute-analyzer",
+  "Run hyperexecute analyzer, returns framework spec. Requires CLI. If CLI not present, first call 'get-hyperexecute-cli'.",
+  {},
+  async () => {
+    try {
+      // Giving permission to the hyperexecute file
+      const { stderr } = await execAsync(
+        "chmod 777 hyperexecute | ls -la hyperexecute "
+      );
+      if (stderr) {
+        return {
+          content: [{
+            type: "text",
+            text: `Error while running chmod command: ${stderr}`
+          }]
+        };
+      } else {
+        const { stderr } = await execAsync(
+          "./hyperexecute analyze"
+        );
+        if (stderr) {
+          return {
+            content: [{
+              type: "text",
+              text: `Error while running hyperexecute command: ${stderr}`
+            }]
+          };
+        }
+        const frameworkSpec: AnalysisOutput = parseAnalysisLog();
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(frameworkSpec, null, 2)
+          }]
+        };
+      }
+    } catch (error: any) {
+      return {
+        content: [{
+          type: "text",
+          text: `Error trying to run hyperexecute analyze: ${error.message}`
+        }]
+      };
+    }
+  }
+);
+
+
+/** 
+// Tool to normalize the analyze JSON into a standard framework spec
+server.tool(
+  "framework-specification",
+  "Normalize HyperExecute-analyzer output JSON into a standard framework spec, requires 'run-hyperexecute-analyze' to be executed first to feed it's input in json format to get response in standard json format",
+  {
+    jsonInput: z.any().describe("Detailed JSON output from hyperexecute analyze"),
+  },
+  async ({ jsonInput }) => {
+    try {
+      const result = normalize(jsonInput);
+      return {
+        content: [
+          {
+            type: "text",
+            // NOTE: Return statement is made more prompt to LLM because input is sent from LLM model which can be arbitary.
+            text: ` Analyzer output: ${JSON.stringify(result, null, 2)}
+                    Rules:
+                    - Output ONLY valid JSON, no explanations.`
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: ` Failed to normalize: ${error.message}. Provide a JSON that matches the pattern: ${JSON.stringify(NormalizedPattern)}.
+                    Input was: ${JSON.stringify(jsonInput)}`,
+          },
+        ],
+      };
+    }
+  }
+);
+*/
+
+
+// Tool to create hyperexecute yaml file
+server.tool(
+  "Create-hyperexecute-yaml-file",
+  `By refering to the sample_yaml_file.yaml as a template & considering this framework specification, create hyperexecute.yaml file for the this framework. 
+   Need to call 'run-hyperexecute-analyzer' first before calling this tool`,
+  {
+    jsonInput: z.string().describe("Output from hyperexecute analyze"),
+  },
+  async ({ jsonInput }) => {
+    try {
+      const frameworkSpec = JSON.parse(jsonInput);
+      return {
+        content: [
+          {
+            type: "text",
+            text: ` 'Framework-specification': ${JSON.stringify(frameworkSpec, null, 2)}
+                    Refer to the sample_yaml_file.yaml as a template to create hyperexecute.yaml file.
+                    Note: Do not add any extra fields or commands; only modify based on values in the normalized output.
+                    `
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: ` Error in creating hyperexecute.yaml file: ${error.message}`,
+          },
+        ],
+      };
+    }
+  }
+);
+
+
+const transport = new StdioServerTransport();
+server.connect(transport);
