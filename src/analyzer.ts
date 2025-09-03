@@ -1,5 +1,18 @@
+/**
+ * analyzer.ts
+ * 
+ * Parses and normalizes analysis output from hyperexecute-analyze.log.
+ *
+ * Author: Dhakshath Amin
+ * Date: 2 September 2025
+ * Description: Provides utilities to extract language, runtime, package manager, test frameworks, and other metadata from analysis logs.
+ */
+
 import * as fs from "fs";
 
+/**
+ * Describes the structure of the parsed analysis output.
+ */
 interface AnalysisOutput {
     language: string;
     runtimeVersion: string;
@@ -13,6 +26,12 @@ interface AnalysisOutput {
     testFiles: string[];
 }
 
+/**
+ * Reads the last line from a file.
+ * Throws an error if the file does not exist.
+ * @param filePath Path to the file
+ * @returns Last line of the file as a string
+ */
 function getLastLine(filePath: string): string {
     if (!fs.existsSync(filePath)) throw new Error(`File ${filePath} does not exist`);
 
@@ -21,15 +40,28 @@ function getLastLine(filePath: string): string {
     return lines[lines.length - 1];
 }
 
+/**
+ * Normalizes the runtime version string.
+ * Extracts version number for Java, otherwise trims the string.
+ * @param runtimeStr Raw runtime version string
+ * @param language Programming language
+ * @returns Normalized runtime version
+ */
 function normalizeRuntimeVersion(runtimeStr: string, language: string): string {
     const match = runtimeStr.match(/v?(\d+(?:\.\d+){0,2})/);
     return match ? match[1].trim() : runtimeStr.trim();
 }
 
+/**
+ * Extracts framework names from the frameworks string.
+ * Handles both Java (name before '->') and JS/TS (package@version).
+ * @param frameworksStr Raw frameworks string
+ * @returns Array of framework names
+ */
 function normalizeFrameworks(frameworksStr: string): string[] {
     const frameworks: string[] = [];
     const regex = /(\w+)\s*->|([\w-]+@[\d\w\.\^\-]+)/g;
-    let match;
+    let match: RegExpExecArray | null;
 
     while ((match = regex.exec(frameworksStr)) !== null) {
         if (match[1]) {
@@ -43,6 +75,13 @@ function normalizeFrameworks(frameworksStr: string): string[] {
     return frameworks;
 }
 
+/**
+ * Extracts a list of values from a log message for a given field.
+ * Example: PrivateRegistry:[url1 url2]
+ * @param msg Log message string
+ * @param field Field name to extract
+ * @returns Array of values for the field
+ */
 function extractList(msg: string, field: string): string[] {
     const regex = new RegExp(`${field}:\\[([^\\]]*)\\]`);
     const match = msg.match(regex);
@@ -50,6 +89,11 @@ function extractList(msg: string, field: string): string[] {
     return match[1].split(" ").map(f => f.trim()).filter(Boolean);
 }
 
+/**
+ * Extracts test file paths from the log message.
+ * @param msg Log message string
+ * @returns Array of test file paths
+ */
 function extractTestFiles(msg: string): string[] {
     const regex = /TestFiles:\[([^\]]*)\]/;
     const match = msg.match(regex);
@@ -59,18 +103,24 @@ function extractTestFiles(msg: string): string[] {
     return files;
 }
 
+/**
+ * Parses the last line of the analysis log file and returns structured output.
+ * Throws an error if parsing fails.
+ * @returns Parsed analysis output
+ */
 function parseAnalysisLog(): AnalysisOutput {
     try {
         const filePath = "hyperexecute-analyze.log";
         const lastLine = getLastLine(filePath);
+        // Parse the last line as JSON
         const logObj = JSON.parse(lastLine);
-
+        // Extract the message string from the log object
         const msg: string = logObj.msg;
-
+        // Extract various fields using regex
         const languageMatch = msg.match(/Language:([^\s]+)/);
         const runtimeMatch = msg.match(/RuntimeVersion:([^\n]+)/);
         const packageManagerMatch = msg.match(/PackageManager:(\w+)/);
-        const packageManagerVersionMatch = msg.match(/PackageManagerVersion:([^\n]+)/); //remove
+        const packageManagerVersionMatch = msg.match(/PackageManagerVersion:([^\n]+)/);
         const testFrameworksMatch = msg.match(/TestFrameworks:\[([^\]]*)\]/);
 
         const language = languageMatch ? languageMatch[1].trim() : "";
@@ -86,6 +136,7 @@ function parseAnalysisLog(): AnalysisOutput {
             : [];
         const testFiles = extractTestFiles(msg);
 
+        // Return the structured analysis output
         return {
             language,
             runtimeVersion,
@@ -104,5 +155,5 @@ function parseAnalysisLog(): AnalysisOutput {
     }
 }
 
-
+// Export main function and output type
 export { parseAnalysisLog, AnalysisOutput };
