@@ -4,7 +4,10 @@ import { z } from "zod";
 import { exec } from "child_process";
 import util from "util";
 import { normalize, NormalizedPattern } from "./normalizer";
-import { parseAnalysisLog, AnalysisOutput } from "./analyzer";
+import { FrameworkSpecAnalyzer, AnalysisOutput } from "./framework-spec";
+import { hyperexecuteYamlCreator } from "./yaml-creator";
+
+let frameworkSpecObject: FrameworkSpecAnalyzer | null = null;
 
 const server = new McpServer({
   name: "Hyperexecute-Wells Tool",
@@ -137,7 +140,8 @@ server.tool(
             }]
           };
         }
-        const frameworkSpec: AnalysisOutput = parseAnalysisLog();
+        frameworkSpecObject = new FrameworkSpecAnalyzer(); // Object is stored globally
+        const frameworkSpec: AnalysisOutput = frameworkSpecObject.parseAnalysisLog();
         return {
           content: [{
             type: "text",
@@ -194,7 +198,7 @@ server.tool(
 );
 */
 
-
+/**
 // Tool to create hyperexecute yaml file
 server.tool(
   "Create-hyperexecute-yaml-file",
@@ -223,6 +227,58 @@ server.tool(
           {
             type: "text",
             text: ` Error in creating hyperexecute.yaml file: ${error.message}`,
+          },
+        ],
+      };
+    }
+  }
+);
+*/
+
+// Tool to create hyperexecute yaml file
+server.tool(
+  "create-hyperexecute-yaml-file",
+  `Create a hyperexecute yaml file for the this framework. 
+   Need to call 'run-hyperexecute-analyzer' first before calling this tool`,
+  {
+    projectName: z.string().describe("Pass the project name found in https://hyperexecute.lambdatest.com/hyperexecute/projects"),
+    projectID: z.string().describe("Pass your project ID found in https://hyperexecute.lambdatest.com/hyperexecute/projects"),
+  },
+  async ({ projectName, projectID }) => {
+    try {
+      if (!frameworkSpecObject) frameworkSpecObject = new FrameworkSpecAnalyzer();
+      // const packageManager: string = frameworkSpecObject.getField('packageManager');
+      // const testFrameworks: string[] = frameworkSpecObject.getField('testFrameworks');
+      // const testFiles: string[] = frameworkSpecObject.getField('testFiles');
+
+      const packageManager: string = 'npm';
+      const testFrameworks: string[] = ['playwright@1.35.0'];
+      const testFiles: string[] = ['test/framework-spec.test.ts', 'test/yaml-creater.test.ts'];
+
+      let playwrightVersion: string = '', result: string = '';
+      if (packageManager === 'npm' || packageManager === 'yarn' || packageManager === 'pnpm') {
+        for (const testFramework of testFrameworks) {
+          if (testFramework.includes('playwright')) {
+            playwrightVersion = testFramework;
+          }
+        }
+        result = hyperexecuteYamlCreator(projectName, projectID, playwrightVersion, testFiles[0])
+      }
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Created hyperexecute.yaml file\n ${JSON.stringify(result, null, 2)}`
+          },
+        ],
+      };
+    } catch (error: any) {
+      console.error(error.message);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error in creating hyperexecute.yaml file: ${error.message}`,
           },
         ],
       };

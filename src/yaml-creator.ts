@@ -5,17 +5,16 @@ type yaml = YAML.Document.Parsed;
 /**
  * Load YAML file as a YAML Document (preserves comments & formatting)
  */
-function getFileContent(filePath: string): yaml {
+function getFileContent(filePath: string): string {
     if (!fs.existsSync(filePath)) throw new Error(`File ${filePath} does not exist`);
-    const data = fs.readFileSync(filePath, 'utf-8');
-    return YAML.parseDocument(data);
+    return fs.readFileSync(filePath, 'utf-8');
 }
 
 /**
  * Write YAML Document back to file
  */
-function writeFile(filePath: string, doc: yaml) {
-    fs.writeFileSync(filePath, doc.toString(), 'utf-8');
+function writeFile(filePath: string, doc: string) {
+    fs.writeFileSync(filePath, doc, 'utf-8');
 }
 
 /**
@@ -60,29 +59,21 @@ function updateTestRunnerCommand(doc: yaml, command: string) {
 /**
  * Main function to create or update hyperexecute YAML
  */
-function hyperexecuteYamlCreator(projectName: string, projectID: string) {
+function hyperexecuteYamlCreator(projectName: string, projectID: string, playwrightVersion: string = 'playwright@1.55.0', testPath: string = 'tests/page_test.spec.js'): string {
     try {
         const doc = getFileContent('sample_yaml_file.yaml');
+        const docConvertedToYaml = YAML.parseDocument(doc);   // Serialize the document: string contents into YAML Object for easy operation
 
-        updateProject(doc, { name: projectName, id: projectID });
-        updatePre(doc, 'playwright@1.55.0');
+        updateProject(docConvertedToYaml, { name: projectName, id: projectID });
+        updatePre(docConvertedToYaml, playwrightVersion);
+        updateTestRunnerCommand(docConvertedToYaml, `npx playwright test ${testPath}`);
 
-        const testPath = 'tests/page_test.spec.js';
-        updateTestRunnerCommand(doc, `npx playwright test ${testPath}`);
-
-        writeFile('hyperexecute.yaml', doc);
-        console.log('hyperexecute.yaml created successfully!');
+        const yamlContent = docConvertedToYaml.toString();   // De-serialize the YAML object to string
+        writeFile('hyperexecute.yaml', yamlContent);
+        return yamlContent;
     } catch (error: any) {
         throw new Error(`Error creating YAML file: ${error.message}`);
     }
 }
 
-/**
- * Test function to verify YAML creation
- */
-function testYamlCreator(): yaml {
-    hyperexecuteYamlCreator("TestProjectName", "46517TEST810");
-    return getFileContent('hyperexecute.yaml');
-}
-
-export { hyperexecuteYamlCreator, testYamlCreator };
+export { hyperexecuteYamlCreator };

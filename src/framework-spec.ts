@@ -184,30 +184,6 @@ class FrameworkSpecAnalyzer {
     }
 
     /**
-     * Get language from the analysis
-     * @returns Language string
-     */
-    public getLanguage(): string {
-        return this.getField('language') || '';
-    }
-
-    /**
-     * Get test frameworks from the analysis
-     * @returns Array of test frameworks
-     */
-    public getTestFrameworks(): string[] {
-        return this.getField('testFrameworks') || [];
-    }
-
-    /**
-     * Get test files from the analysis
-     * @returns Array of test file paths
-     */
-    public getTestFiles(): string[] {
-        return this.getField('testFiles') || [];
-    }
-
-    /**
      * Check if the log file exists
      * @returns True if file exists, false otherwise
      */
@@ -244,7 +220,7 @@ class FrameworkSpecAnalyzer {
      * @param logFilePath Optional log file path
      * @returns Parsed analysis output
      */
-    public static parseAnalysisLog(logFilePath: string = "hyperexecute-analyze.log"): AnalysisOutput {
+    public static testFrameworkSpec(logFilePath: string = "hyperexecute-analyze.log"): AnalysisOutput {
         const analyzer = new FrameworkSpecAnalyzer(logFilePath);
         return analyzer.parseAnalysisLog();
     }
