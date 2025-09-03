@@ -3,7 +3,6 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from "zod";
 import { exec } from "child_process";
 import util from "util";
-import { normalize, NormalizedPattern } from "./normalizer";
 import { FrameworkSpecAnalyzer, AnalysisOutput } from "./framework-spec";
 import { hyperexecuteYamlCreator } from "./yaml-creator";
 
@@ -131,44 +130,6 @@ server.tool(
     }
   }
 );
-
-
-/** 
-// Tool to normalize the analyze JSON into a standard framework spec
-server.tool(
-  "framework-specification",
-  "Normalize HyperExecute-analyzer output JSON into a standard framework spec, requires 'run-hyperexecute-analyze' to be executed first to feed it's input in json format to get response in standard json format",
-  {
-    jsonInput: z.any().describe("Detailed JSON output from hyperexecute analyze"),
-  },
-  async ({ jsonInput }) => {
-    try {
-      const result = normalize(jsonInput);
-      return {
-        content: [
-          {
-            type: "text",
-            // NOTE: Return statement is made more prompt to LLM because input is sent from LLM model which can be arbitary.
-            text: ` Analyzer output: ${JSON.stringify(result, null, 2)}
-                    Rules:
-                    - Output ONLY valid JSON, no explanations.`
-          },
-        ],
-      };
-    } catch (error: any) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: ` Failed to normalize: ${error.message}. Provide a JSON that matches the pattern: ${JSON.stringify(NormalizedPattern)}.
-                    Input was: ${JSON.stringify(jsonInput)}`,
-          },
-        ],
-      };
-    }
-  }
-);
-*/
 
 // Tool to create hyperexecute yaml file
 server.tool(
