@@ -1,23 +1,41 @@
 {
   "version": "0.2.0",
   "configurations": [
-    
     {
       "type": "node",
       "request": "launch",
       "name": "Debug Normalizer Test: normalizer.test.ts",
-  "program": "${workspaceFolder}/node_modules/.bin/tsx",
-  "args": ["${workspaceFolder}/node_modules/.bin/mocha", "${workspaceFolder}/test/normalizer.test.ts"],
-  "runtimeArgs": [],
+      "program": "${workspaceFolder}/node_modules/.bin/tsx",
+      "args": [
+        "${workspaceFolder}/node_modules/.bin/mocha",
+        "${workspaceFolder}/test/normalizer.test.ts"
+      ],
+      "runtimeArgs": [],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug Analyzer Test: analyzer.test.ts",
+      "name": "Debug Framework-Spec Test: framework-spec.test.ts",
       "program": "${workspaceFolder}/node_modules/.bin/tsx",
-      "args": ["${workspaceFolder}/node_modules/.bin/mocha", "${workspaceFolder}/test/analyzer.test.ts"],
+      "args": [
+        "${workspaceFolder}/node_modules/.bin/mocha",
+        "${workspaceFolder}/test/framework-spec.test.ts"
+      ],
+      "runtimeArgs": [],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug yaml-creator Test: yaml-creator.test.ts",
+      "program": "${workspaceFolder}/node_modules/.bin/tsx",
+      "args": [
+        "${workspaceFolder}/node_modules/.bin/mocha",
+        "${workspaceFolder}/test/yaml-creator.test.ts"
+      ],
       "runtimeArgs": [],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"

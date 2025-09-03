@@ -1,19 +1,22 @@
 {
   "name": "wells_mcp",
   "version": "1.0.0",
-  "main": "main.ts",
+  "author": "Dhakshath Amin",
+  "license": "ISC",
+  "description": "MCP server for Wells on hyperexecute tool",
+  "main": "src/main.ts",
   "type": "module",
   "scripts": {
     "start": "npx -y @modelcontextprotocol/inspector npx -y tsx src/main.ts",
     "test_normalizer": "npx tsx node_modules/.bin/mocha test/normalizer.test.ts",
-    "test_analyzer": "npx tsx node_modules/.bin/mocha test/analyzer.test.ts"
+    "test_analyzer": "npx tsx node_modules/.bin/mocha test/analyzer.test.ts",
+    "test_yaml_creator": "npx tsx node_modules/.bin/mocha test/yaml-creator.test.ts"
   },
-  "author": "Dhakshath Amin",
-  "license": "ISC",
-  "description": "MCP server for Wells on hyperexecute tool",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.4",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.3.0",
+    "yaml": "^2.8.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
