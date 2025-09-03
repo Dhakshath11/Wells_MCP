@@ -83,34 +83,6 @@ server.tool(
   }
 );
 
-// server.tool(
-//   "get-hyperexecute-cli",
-//   "Download hyperexecute CLI. Should only be called if 'hyperexecute-cli-present?' reports missing CLI.",
-//   {},
-//   async () => {
-//     try {
-//       // Curl command will always return stderr, not stdout. Hence not checking stdout.
-//       const { stderr } = exec(
-//         "curl -s -O https://downloads.lambdatest.com/hyperexecute/darwin/hyperexecute"
-//       );
-//       return {
-//         content: [{
-//           type: "text",
-//           text: `Downloading the file, Please wait for sometime to complete.`
-//         }]
-//       };
-
-//     } catch (error: any) {
-//       return {
-//         content: [{
-//           type: "text",
-//           text: `Error in downloading, here is Response: ${error.message}`
-//         }]
-//       };
-//     }
-//   }
-// );
-
 server.tool(
   "run-hyperexecute-analyzer",
   "Run hyperexecute analyzer, returns framework spec. Requires CLI. If CLI not present, first call 'get-hyperexecute-cli'.",
@@ -190,43 +162,6 @@ server.tool(
             type: "text",
             text: ` Failed to normalize: ${error.message}. Provide a JSON that matches the pattern: ${JSON.stringify(NormalizedPattern)}.
                     Input was: ${JSON.stringify(jsonInput)}`,
-          },
-        ],
-      };
-    }
-  }
-);
-*/
-
-/**
-// Tool to create hyperexecute yaml file
-server.tool(
-  "Create-hyperexecute-yaml-file",
-  `By refering to the sample_yaml_file.yaml as a template & considering this framework specification, create hyperexecute.yaml file for the this framework. 
-   Need to call 'run-hyperexecute-analyzer' first before calling this tool`,
-  {
-    jsonInput: z.string().describe("Output from hyperexecute analyze"),
-  },
-  async ({ jsonInput }) => {
-    try {
-      const frameworkSpec = JSON.parse(jsonInput);
-      return {
-        content: [
-          {
-            type: "text",
-            text: ` 'Framework-specification': ${JSON.stringify(frameworkSpec, null, 2)}
-                    Refer to the sample_yaml_file.yaml as a template to create hyperexecute.yaml file.
-                    Note: Do not add any extra fields or commands; only modify based on values in the normalized output.
-                    `
-          },
-        ],
-      };
-    } catch (error: any) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: ` Error in creating hyperexecute.yaml file: ${error.message}`,
           },
         ],
       };
