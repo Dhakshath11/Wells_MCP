@@ -51,7 +51,13 @@ const addCapabilities = (doc: string): string => {
             },
         };
     `;
-    return doc + '\n' + capabilitiesBlock;  // To Appending capabilities block to the doc
+    if (!doc.includes('const capabilities')) { doc = doc + '\n' + capabilitiesBlock; }// To Appending capabilities block to the doc
+    else {
+        // Else replace the full capabilities block
+        const regex = /const capabilities\s*=\s*{[\s\S]*?};/;
+        return doc.replace(regex, capabilitiesBlock.trim());
+    }
+    return doc;
 }
 
 /**

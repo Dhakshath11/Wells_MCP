@@ -15,7 +15,6 @@ function findFileAbsolutePath(startDir: string, fileName: string): string | null
         // const fullPath = path.join(startDir, entry.name);
         const fullPath = path.resolve(startDir, entry.name);  // resolve: Absolute path
         if (entry.isFile() && entry.name.toLocaleLowerCase() === fileName.toLocaleLowerCase()) {
-            console.log("File found: " + fullPath);
             return fullPath; // File found
         }
         if (entry.isDirectory()) {

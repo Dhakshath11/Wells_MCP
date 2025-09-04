@@ -5,6 +5,8 @@ import { exec } from "child_process";
 import util from "util";
 import { FrameworkSpecAnalyzer, AnalysisOutput } from "./framework-spec";
 import { hyperexecuteYamlCreator } from "./yaml-creator";
+import { playwrightConfigSetup } from "./playwright-setup/playwright-config-setup";
+import { updateImportPaths } from "./playwright-setup/playwright-lambdatest-setup";
 
 let frameworkSpecObject: FrameworkSpecAnalyzer | null = null;
 
@@ -72,6 +74,7 @@ server.tool(
       };
 
     } catch (error: any) {
+      console.error(error.message); // Log the error for debugging - you can see it in MCP inpsector bottom-left
       return {
         content: [{
           type: "text",
@@ -121,6 +124,7 @@ server.tool(
         };
       }
     } catch (error: any) {
+      console.error(error.message); // Log the error for debugging - you can see it in MCP inpsector bottom-left
       return {
         content: [{
           type: "text",
@@ -133,9 +137,46 @@ server.tool(
 
 // Tool to create hyperexecute yaml file
 server.tool(
+  "make-hyperexecute-compatible",
+  `Make the framework compatible with Hyperexecute CLI.`,
+  {},
+  async ({ }) => {
+    try {
+      if (!frameworkSpecObject) frameworkSpecObject = new FrameworkSpecAnalyzer();
+      const packageManager: string = frameworkSpecObject.getField('packageManager');
+      const testFrameworks: string[] = frameworkSpecObject.getField('testFrameworks');
+      const testFiles: string[] = frameworkSpecObject.getField('testFiles');
+
+      if (["npm", "yarn", "pnpm"].includes(packageManager) && testFrameworks.some(fw => fw.includes("playwright"))) {
+        playwrightConfigSetup();
+        updateImportPaths(testFiles);
+      }
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Made the framework compatible with Hyperexecute CLI by updating playwright.config.js and replacing imports in test files with lambdatest-test.`,
+          },
+        ],
+      };
+    } catch (error: any) {
+      console.error(error.message); // Log the error for debugging - you can see it in MCP inpsector bottom-left
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error in making the framework compatible with Hyperexecute CLI: ${error.message}`,
+          },
+        ],
+      };
+    }
+  }
+);
+
+// Tool to create hyperexecute yaml file
+server.tool(
   "create-hyperexecute-yaml-file",
-  `Create a hyperexecute yaml file for the this framework. 
-   Need to call 'run-hyperexecute-analyzer' first before calling this tool`,
+  `Create a hyperexecute yaml file for the this framework.`,
   {
     projectName: z.string().describe("Pass the project name found in https://hyperexecute.lambdatest.com/hyperexecute/projects"),
     projectID: z.string().describe("Pass your project ID found in https://hyperexecute.lambdatest.com/hyperexecute/projects"),
@@ -143,13 +184,14 @@ server.tool(
   async ({ projectName, projectID }) => {
     try {
       if (!frameworkSpecObject) frameworkSpecObject = new FrameworkSpecAnalyzer();
-      // const packageManager: string = frameworkSpecObject.getField('packageManager');
-      // const testFrameworks: string[] = frameworkSpecObject.getField('testFrameworks');
-      // const testFiles: string[] = frameworkSpecObject.getField('testFiles');
+      const packageManager: string = frameworkSpecObject.getField('packageManager');
+      const testFrameworks: string[] = frameworkSpecObject.getField('testFrameworks');
+      const testFiles: string[] = frameworkSpecObject.getField('testFiles');
 
-      const packageManager: string = 'npm';
-      const testFrameworks: string[] = ['playwright@1.35.0'];
-      const testFiles: string[] = ['test/framework-spec.test.ts', 'test/yaml-creater.test.ts'];
+      /** TOOD: HARDERD TO TEST IN INSPECTOR */
+      // const packageManager: string = 'npm';
+      // const testFrameworks: string[] = ['playwright@1.35.0'];
+      // const testFiles: string[] = ['test/framework-spec.test.ts', 'test/yaml-creater.test.ts'];
 
       let playwrightVersion: string = '', result: string = '';
       if (packageManager === 'npm' || packageManager === 'yarn' || packageManager === 'pnpm') {
@@ -169,7 +211,7 @@ server.tool(
         ],
       };
     } catch (error: any) {
-      console.error(error.message);
+      console.error(error.message); // Log the error for debugging - you can see it in MCP inpsector bottom-left
       return {
         content: [
           {
