@@ -39,6 +39,29 @@
       "runtimeArgs": [],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug config-update Test: config-update.test.ts",
+      "program": "${workspaceFolder}/node_modules/.bin/tsx",
+      "args": [
+        "${workspaceFolder}/node_modules/.bin/mocha",
+        "${workspaceFolder}/test/config-update.test.ts"
+      ],
+      "runtimeArgs": [],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug import-update Test: import-update.test.ts",
+      "program": "${workspaceFolder}/node_modules/.bin/tsx",
+      "args": [
+        "${workspaceFolder}/node_modules/.bin/mocha",
+        "${workspaceFolder}/test/import-update.test.ts"
+      ],
     }
   ]
 }

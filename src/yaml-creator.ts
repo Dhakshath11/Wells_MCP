@@ -3,7 +3,7 @@ import YAML from 'yaml';
 type yaml = YAML.Document.Parsed;
 
 /**
- * Load YAML file as a YAML Document (preserves comments & formatting)
+ * Load content from file
  */
 function getFileContent(filePath: string): string {
     if (!fs.existsSync(filePath)) throw new Error(`File ${filePath} does not exist`);
@@ -11,7 +11,7 @@ function getFileContent(filePath: string): string {
 }
 
 /**
- * Write YAML Document back to file
+ * Write to file
  */
 function writeFile(filePath: string, doc: string) {
     fs.writeFileSync(filePath, doc, 'utf-8');
