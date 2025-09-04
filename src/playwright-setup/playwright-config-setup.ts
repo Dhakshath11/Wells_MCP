@@ -61,29 +61,42 @@ const addCapabilities = (doc: string): string => {
 }
 
 /**
- * Replace project block in the doc
+ * Comment out project block in the doc & Add new Content
  */
 const replaceProjectBlock = (doc: string): string => {
     const projectBlock: string = `
-        {
-            use: {
-                connectOptions: {
-                    wsEndpoint: \`wss://cdp.lambdatest.com/playwright?capabilities=\${encodeURIComponent(JSON.stringify(capabilities))}\`
-                },
-            viewport: { width: 1280, height: 720 }
-            }
+    {
+      use: {
+        connectOptions: {
+          wsEndpoint: \`wss://cdp.lambdatest.com/playwright?capabilities=\${encodeURIComponent(JSON.stringify(capabilities))}\`
         },
-    `;
+      viewport: { width: 1280, height: 720 }
+      }
+    },
+  `;
+
+    // TODO: Add condition to check if above string already present & not commented out
     doc = doc.replace(
         /(projects\s*:\s*\[)([\s\S]*?)(\])/,
-        `$1\n  ${projectBlock}\n$3`
+        (match, start, middle, end) => {
+            // Comment out the old block
+            const commentedOld = middle
+                .split("\n")
+                .map(line => (line.trim() ? `// ${line}` : line))
+                .join("\n");
+
+            return `${start}\n${commentedOld}\n${projectBlock}\n${end}`;
+        }
+        // Single Regex grouped by 3 brackets, 
+        // Group1 -> (projects\s*:\s*\[) says projects<OPTIONAL_SPACE>:<OPTIONAL_SPACE>:>[ so that 'project:[', 'project: [', 'project : [' all are matched => start
+        // Group2 -> ([\s\S]*?) says any content in between the brackets => middle
+        // Group3 -> (\]) says ] => end
+        // Group -> 'Group1, Group2, Group3' combined => match
     );
+
     return doc;
-    // Single Regex grouped by 3 brackets, 
-    // Group1 -> (projects\s*:\s*\[) says projects<OPTIONAL_SPACE>:<OPTIONAL_SPACE>:>[ so that 'project:[', 'project: [', 'project : [' all are matched
-    // Group2 -> ([\s\S]*?) says any content in between the brackets
-    // Group3 -> (\]) says ]
-}
+};
+
 
 // TODO: function for to find & change => reporter: [['html', { open: "never" }]],
 
