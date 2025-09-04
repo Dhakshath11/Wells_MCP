@@ -5,3 +5,6 @@ coverage
 .DS_Store
 hyperexecute
 hyperexecute-analyze.log
+.updatedhyperexecute.yaml
+hyperexecute-cli.log
+.hyperexecute

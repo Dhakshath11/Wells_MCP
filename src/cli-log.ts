@@ -19,14 +19,18 @@ async function waitForLogMessage(
         const start = Date.now();
         const timer = setInterval(() => {
             try {
-                if (!fs.existsSync(absolutePath)) return; // file not yet created
-                const contents = fs.readFileSync(absolutePath, "utf-8");
-                if (contents.includes(searchString)) {
+                // Always check timeout first
+                if (Date.now() - start > timeoutMs) {
                     clearInterval(timer);
-                    resolve(true); // found string
-                } else if (Date.now() - start > timeoutMs) {
-                    clearInterval(timer);
-                    resolve(false); // timeout
+                    return resolve(false); // timeout
+                }
+
+                if (fs.existsSync(absolutePath)) {
+                    const contents = fs.readFileSync(absolutePath, "utf-8");
+                    if (contents.includes(searchString)) {
+                        clearInterval(timer);
+                        return resolve(true); // found string
+                    }
                 }
             } catch (err) {
                 clearInterval(timer);
