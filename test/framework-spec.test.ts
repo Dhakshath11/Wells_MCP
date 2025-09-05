@@ -1,3 +1,4 @@
+import { test, expect } from "/Users/dhakshath/Documents/Wells_MCP/lambdatest-setup.js";
 import * as analyzer from "../src/framework-spec";
 
 describe("framework-spec.ts", () => {

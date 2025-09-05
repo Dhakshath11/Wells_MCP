@@ -227,14 +227,14 @@ server.tool(
 
 server.tool(
   "setup-lambdatest-credentials",
-  "Collect LambdaTest credentials if not already provided",
+  "Collect LambdaTest credentials if not already provided from user input (must be entered manually, cannot be inferred).",
   {
     LT_USERNAME: z
       .string()
-      .describe("Provide your LambdaTest username (from https://hyperexecute.lambdatest.com/hyperexecute)"),
+      .describe("Provide your LambdaTest username Manually (Copy if from link: https://hyperexecute.lambdatest.com/hyperexecute)"),
     LT_ACCESS_KEY: z
       .string()
-      .describe("Provide your LambdaTest access key"),
+      .describe("Provide your LambdaTest access key Manually"),
   },
   async ({ LT_USERNAME, LT_ACCESS_KEY }) => {
     // Override global vars only if user provides
@@ -245,7 +245,8 @@ server.tool(
         {
           type: "text",
           text: (!username || !accessKey)
-            ? "Please provide LambdaTest credentials to run tests on HyperExecute"
+            ? `Please provide LambdaTest credentials to run tests on HyperExecute;
+               Can be found in the link: https://hyperexecute.lambdatest.com/hyperexecute`
             : `LambdaTest credentials configured successfully for user: ${username}`,
         },
       ],

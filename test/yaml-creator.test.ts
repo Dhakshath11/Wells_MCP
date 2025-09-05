@@ -1,3 +1,4 @@
+import { test, expect } from "/Users/dhakshath/Documents/Wells_MCP/lambdatest-setup.js";
 import * as creator from "../src/yaml-creator";
 
 describe("yaml-creator.ts", () => {
