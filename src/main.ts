@@ -7,7 +7,7 @@ import { FrameworkSpecAnalyzer, AnalysisOutput } from "./framework-spec";
 import { hyperexecuteYamlCreator } from "./yaml-creator";
 import { playwrightConfigSetup } from "./playwright-setup/playwright-config-setup";
 import { updateImportPaths } from "./playwright-setup/playwright-lambdatest-setup";
-import { isJobTriggered, deletLogFile } from "./cli-log";
+import { isJobTriggered } from "./cli-log";
 import * as fileOps from './commons/fileOperations.js';
 
 let frameworkSpecObject: FrameworkSpecAnalyzer | null = null;
@@ -227,7 +227,7 @@ server.tool(
 
 server.tool(
   "setup-lambdatest-credentials",
-  "Collect LambdaTest credentials if not already provided from user input (must be entered manually, cannot be inferred).",
+  "Collect LambdaTest credentials if NOT ALREADY provided from user input (must be entered manually, cannot be inferred).",
   {
     LT_USERNAME: z
       .string()
