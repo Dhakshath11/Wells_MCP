@@ -8,6 +8,7 @@ import { hyperexecuteYamlCreator } from "./yaml-creator";
 import { playwrightConfigSetup } from "./playwright-setup/playwright-config-setup";
 import { updateImportPaths } from "./playwright-setup/playwright-lambdatest-setup";
 import { isJobTriggered, deletLogFile } from "./cli-log";
+import * as fileOps from './commons/fileOperations.js';
 
 let frameworkSpecObject: FrameworkSpecAnalyzer | null = null;
 let username = process.env.LT_USERNAME;
@@ -261,7 +262,7 @@ server.tool(
   async () => {
     try {
       let lastCliOutput = "";
-      deletLogFile();
+      fileOps.deleteFile('hyperexecute-cli.log');
       exec(`./hyperexecute --user ${username} --key ${accessKey} --config hyperexecute.yaml --no-track`,
         (error, stdout, stderr) => {
           if (error || stderr) {

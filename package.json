@@ -9,7 +9,7 @@
   "scripts": {
     "start": "npx -y @modelcontextprotocol/inspector npx -y tsx src/main.ts",
     "test_normalizer": "npx tsx node_modules/.bin/mocha test/normalizer.test.ts",
-    "test_analyzer": "npx tsx node_modules/.bin/mocha test/analyzer.test.ts",
+    "test_framework_spec": "npx tsx node_modules/.bin/mocha test/framework-spec.test.ts",
     "test_yaml_creator": "npx tsx node_modules/.bin/mocha test/yaml-creator.test.ts",
     "test_config_update": "npx tsx node_modules/.bin/mocha test/config-update.test.ts",
     "test_import_update": "npx tsx node_modules/.bin/mocha test/import-update.test.ts"

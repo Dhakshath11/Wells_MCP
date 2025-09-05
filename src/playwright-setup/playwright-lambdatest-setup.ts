@@ -1,44 +1,4 @@
-import * as fs from "fs";
-import * as path from "path";
-
-/**
- * Look for a file in given directories (recursively).
- * @param startDir Directory to start searching from
- * @param fileName File to look for
- * @returns Full path if found, otherwise null
- */
-function findFileAbsolutePath(startDir: string, fileName: string): string | null {
-    // Get the list of files/folders inside startDir
-    const entries = fs.readdirSync(startDir, { withFileTypes: true });
-
-    for (const entry of entries) {
-        // const fullPath = path.join(startDir, entry.name);
-        const fullPath = path.resolve(startDir, entry.name);  // resolve: Absolute path
-        if (entry.isFile() && entry.name.toLocaleLowerCase() === fileName.toLocaleLowerCase()) {
-            return fullPath; // File found
-        }
-        if (entry.isDirectory()) {
-            const result = findFileAbsolutePath(fullPath, fileName);
-            if (result) return result; // bubble up result if found
-        }
-    }
-    return null; // Not found
-}
-
-/**
- * Load content from file
- */
-function getFileContent(filePath: string): string {
-    if (!fs.existsSync(filePath)) throw new Error(`File ${filePath} does not exist`);
-    return fs.readFileSync(filePath, 'utf-8');
-}
-
-/**
- * Write to file
- */
-function writeFile(filePath: string, doc: string) {
-    fs.writeFileSync(filePath, doc, 'utf-8');
-}
+import * as fileOps from '../commons/fileOperations.js';
 
 function replaceImportPaths(fileContent: string, fileToImport: string): string {
     const importString = `import { test, expect } from "${fileToImport}";`;
@@ -65,7 +25,6 @@ function replaceImportPaths(fileContent: string, fileToImport: string): string {
     lines.unshift(importString);
     fileContent = lines.join('\n');
     return fileContent;
-
 }
 
 
@@ -73,14 +32,14 @@ function updateImportPaths(testFiles: string[]): void {
     try {
         if (testFiles.length === 0) throw new Error('No test files provided');
 
-        const fileToImport = findFileAbsolutePath('.', 'lambdatest-setup.js'); // It is a JavaScript file : Wont have any Impact
+        const fileToImport = fileOps.findFileAbsolutePath('.', 'lambdatest-setup.js'); // It is a JavaScript file : Wont have any Impact
         if (!fileToImport) throw new Error('lambdatest-setup.js file not found');
 
         for (const testFile of testFiles) {
-            let fileContent = getFileContent(testFile);
+            let fileContent = fileOps.getFileContent(testFile);
             if (fileContent) {
                 fileContent = replaceImportPaths(fileContent, fileToImport);
-                writeFile(testFile, fileContent);
+                fileOps.writeFile(testFile, fileContent);
             }
         }
     }
