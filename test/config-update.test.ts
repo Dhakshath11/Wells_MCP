@@ -1,4 +1,3 @@
-import { test, expect } from "/Users/dhakshath/Documents/Wells_MCP/lambdatest-setup.js";
 import * as configSetup from "../src/playwright-setup/playwright-config-setup";
 
 describe("playwright-config-setup.ts", () => {

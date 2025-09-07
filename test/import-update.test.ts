@@ -1,4 +1,3 @@
-import { test, expect } from "/Users/dhakshath/Documents/Wells_MCP/lambdatest-setup.js";
 import * as importUpdate from "../src/playwright-setup/playwright-lambdatest-setup";
 
 describe("playwright-lambdatest-setup", () => {

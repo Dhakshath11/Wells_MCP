@@ -1,4 +1,3 @@
-import { test, expect } from "/Users/dhakshath/Documents/Wells_MCP/lambdatest-setup.js";
 import * as cli from "../src/cli-log.ts";
 import * as fileOps from "../src/commons/fileOperations.ts";
 
@@ -16,7 +15,6 @@ describe("cli-log.test.ts", function() {
             uploadArchiveStarted: await cli.isUploadArchiveStarted(),
             uploadArchiveDone: await cli.isUploadArchiveDone(),
             serverConnectionStarted: await cli.isServerConnectionStarted(),
-            yamlUploadStarted: await cli.isYAMLUploadStarted(),
             jobLinkGenerated: await cli.isJobLinkGenerated(),
             jobTrackStopped: await cli.isJobTrackStopped(),
         };
