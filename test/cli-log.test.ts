@@ -1,3 +1,4 @@
+import { expect } from 'chai';
 import * as cli from "../src/cli-log.ts";
 import * as fileOps from "../src/commons/fileOperations.ts";
 
