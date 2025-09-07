@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import * as cli from "../src/cli-log.ts";
 import * as fileOps from "../src/commons/fileOperations.ts";
 
-describe("cli-log.test.ts", function() {
-    this.timeout(300000); // ⏱ allow 5mins for all tests inside this describe
+describe("cli-log.test.ts", function () {
+    this.timeout(300000); // Allow 5mins for all tests inside this describe
 
     it("Find CLI Logs", async () => {
         fileOps.writeFile("hyperexecute-cli.log", fileContents);
@@ -23,7 +23,7 @@ describe("cli-log.test.ts", function() {
         console.log(results);
 
         // Example: Add expectations
-        expect(typeof results.jobLink).toBe("string");
+        expect(results.jobLink).to.be.a("string");
     });
 });
 

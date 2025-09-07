@@ -13,9 +13,20 @@ function replaceImportPaths(fileContent: string, fileToImport: string): string {
     for (let i = 0; i < lines.length; i++) {
         const trimmed = lines[i].trim();
         if (
-            !trimmed.startsWith("//") &&
-            trimmed.startsWith("import") &&
-            trimmed.includes('"@playwright/test"')
+            // Check for import of @playwright/test which is not commented out: Handles Named Import & ESM modules imports
+            (!trimmed.startsWith("//") &&
+                trimmed.startsWith("import") &&
+                trimmed.includes('"@playwright/test"'))
+
+            ||
+
+            // Check for commonjs require of @playwright/test which is not commented out: Handles CommonJS modules imports
+            // Example: const { test } = require('@playwright/test');
+            (!trimmed.startsWith("//") &&
+                trimmed.includes("require") &&
+                (trimmed.toLowerCase().includes('test') || trimmed.toLowerCase().includes('expect')) &&
+                (trimmed.toLowerCase().includes('lambdatest') || trimmed.includes('playwright')))
+
         ) {
             lines[i] = "// " + lines[i];
         }

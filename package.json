@@ -1,6 +1,6 @@
 {
   "name": "wells_mcp",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "author": "Dhakshath Amin",
   "license": "ISC",
   "description": "MCP server for Wells on hyperexecute tool",

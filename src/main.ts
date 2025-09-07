@@ -9,7 +9,6 @@ import { playwrightConfigSetup } from "./playwright-setup/playwright-config-setu
 import { updateImportPaths } from "./playwright-setup/playwright-lambdatest-setup";
 import * as fileOps from './commons/fileOperations.js';
 import * as cliLog from './cli-log.js';
-import { link } from "fs/promises";
 
 let frameworkSpecObject: FrameworkSpecAnalyzer | null = null;
 let username = process.env.LT_USERNAME;
