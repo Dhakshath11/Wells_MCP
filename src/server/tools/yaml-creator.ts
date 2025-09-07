@@ -1,5 +1,5 @@
 import YAML from 'yaml';
-import * as fileOps from './commons/fileOperations.js';
+import * as fileOps from '../../commons/fileOperations.js';
 type yaml = YAML.Document.Parsed;
 
 /**

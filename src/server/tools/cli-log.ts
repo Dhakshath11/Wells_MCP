@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import * as fileOps from './commons/fileOperations.js';
+import * as fileOps from '../../commons/fileOperations.js';
 
 
 const logFile = path.resolve('hyperexecute-cli.log');

@@ -1,5 +1,6 @@
+import { test, expect } from "/Users/dhakshath/Documents/Wells_MCP/lambdatest-setup.js";
 import { expect } from 'chai';
-import * as cli from "../src/cli-log.ts";
+import * as cli from "../src/server/tools/cli-log.ts";
 import * as fileOps from "../src/commons/fileOperations.ts";
 
 describe("cli-log.test.ts", function () {
