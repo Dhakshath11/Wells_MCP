@@ -7,12 +7,16 @@ import { FrameworkSpecAnalyzer, AnalysisOutput } from "./framework-spec";
 import { hyperexecuteYamlCreator } from "./yaml-creator";
 import { playwrightConfigSetup } from "./playwright-setup/playwright-config-setup";
 import { updateImportPaths } from "./playwright-setup/playwright-lambdatest-setup";
-import { isJobTriggered } from "./cli-log";
 import * as fileOps from './commons/fileOperations.js';
+import * as cliLog from './cli-log.js';
+import { link } from "fs/promises";
 
 let frameworkSpecObject: FrameworkSpecAnalyzer | null = null;
 let username = process.env.LT_USERNAME;
 let accessKey = process.env.LT_ACCESS_KEY;
+let [jobStarted, noError, uploadStarted, uploadDone, serverConnected, jobLink, jobDone] = Array(7).fill(false);
+let jobExecutionLink = "";
+
 
 const server = new McpServer({
   name: "Hyperexecute-Wells Tool",
@@ -62,7 +66,8 @@ server.tool(
 // Tool to download the CLI
 server.tool(
   "get-hyperexecute-cli",
-  "Download hyperexecute CLI. Should only be called if 'hyperexecute-cli-present?' reports missing CLI.",
+  `Download hyperexecute CLI. Should only be called if 'hyperexecute-cli-present?' reports missing CLI.
+   Always run 'run-hyperexecute-analyzer' after downloading the CLI.`,
   {},
   async () => {
     try {
@@ -225,6 +230,7 @@ server.tool(
   }
 );
 
+// Pass the credentials from env variables, let LLM model shall not use it. -> Change it to env variables
 server.tool(
   "setup-lambdatest-credentials",
   "Collect LambdaTest credentials if NOT ALREADY provided from user input (must be entered manually, cannot be inferred).",
@@ -261,6 +267,8 @@ server.tool(
   `Run the tests present in the framework on Hyperexecute lambdatest test tool platform, requires hyperexecute cli, lambdatest-credentials, hyperexecute yaml file and framework compatible with Hyperexecute CLI.`,
   {},
   async () => {
+    // Make control variables false before running the test
+    [jobStarted, noError, uploadStarted, uploadDone, serverConnected, jobLink, jobDone] = Array(7).fill(false);
     try {
       let lastCliOutput = "";
       fileOps.deleteFile('hyperexecute-cli.log');
@@ -274,10 +282,10 @@ server.tool(
           lastCliOutput = stdout;
         }
       );
-      const yes = await isJobTriggered();
-      const message = yes
-        ? "CLI Job triggered successfully"
-        : `Failed to trigger CLI Job. CLI said: ${lastCliOutput || "no output yet"}`;
+
+      jobStarted = await cliLog.isJobTriggered();
+      const message = jobStarted ? "CLI Job triggered successfully" : `Failed to trigger CLI Job. CLI said: ${lastCliOutput || "no output yet"}`;
+
       return {
         content: [{
           type: "text",
@@ -296,6 +304,122 @@ server.tool(
   }
 );
 
+// Analyze the CLI-RUN
+server.tool(
+  "analyze-hyperexecute-cli-run",
+  `Post test runs in hyperexecute CLI, analyze the hyperexecute-cli.logs file to get the Job Link. 
+  Keep on checking for the Job Link until it is found in logs or job is terminated.`,
+  {},
+  async () => {
+    try {
+      let message = "";
+
+      if (!jobStarted) {
+        jobStarted = await cliLog.isJobTriggered();
+        if (jobStarted) {
+          message = `CLI Job triggered successfully, lets check for the job link.`;
+        } else {
+          throw new Error("Tests not started - Please run the tests in hyperexecute CLI.");
+        }
+        return {
+          content: [{
+            type: "text",
+            text: message
+          }]
+        };
+      }
+
+      if (jobStarted && !noError) {
+        const firstResult = await cliLog.detectFirstCLIEvent();
+        switch (firstResult) {
+          case "InvalidCredentials":
+            message = "Invalid credentials. Please input the valid hyperexecute credentials and run tests again.";
+            break;
+          case "ProjectNotFound":
+            message = "Project not found. Please input the valid hyperexecute project name, ID into yaml and run tests again.";
+            break;
+          case "YAMLParseError":
+            message = "Unable to parse hyperexecute.yaml. Please create a new valid hyperexecute.yaml and run tests again.";
+            break;
+          case "YAMLConfigError":
+            message = "Invalid yaml content. Please create a new valid hyperexecute.yaml and run tests again.";
+            break;
+          default:
+            message = "None of the errors are found, can proceed looking for the job link in cli logs.";
+            noError = true;
+        }
+        return {
+          content: [{
+            type: "text",
+            text: message
+          }]
+        };
+      }
+
+      // ----> Steps of job progression <-----
+      const jobSteps = [
+        {
+          condition: () => !uploadStarted,
+          check: async () => (uploadStarted = await cliLog.isUploadArchiveStarted()),
+          message: "Uploading archives started. Please wait for the archives to be uploaded."
+        },
+        {
+          condition: () => uploadStarted && !uploadDone,
+          check: async () => (uploadDone = await cliLog.isUploadArchiveDone()),
+          message: "Uploading archives done. Let's wait for the server connection to be established."
+        },
+        {
+          condition: () => uploadDone && !serverConnected,
+          check: async () => (serverConnected = await cliLog.isServerConnectionStarted()),
+          message: "Server connection established. Please wait for the job link or at least test to terminate."
+        },
+        {
+          condition: () => serverConnected && !jobLink,
+          check: async () => (jobLink = await cliLog.isJobLinkGenerated()),
+          message: (link: string) => `Job link is generated. Here is the job link: ${link}`,
+          onSuccess: async () => await cliLog.getJobLink()
+        }
+      ];
+
+      if (jobStarted && !jobDone) {
+        for (const step of jobSteps) {
+          if (step.condition()) {
+            const result = await step.check();
+            if (result) {
+              // If job link step → fetch dynamic link
+              if (step.onSuccess) {
+                jobExecutionLink = await step.onSuccess();
+                return { content: [{ type: "text", text: step.message(jobExecutionLink) }] };
+              }
+              return { content: [{ type: "text", text: step.message }] };
+            }
+          }
+        }
+      }
+
+      // Deadlock prevention → job ended but no jobLink
+      if (!jobLink) {
+        jobDone = await cliLog.isJobTrackStopped();
+        if (jobDone) {
+          throw new Error("Job link is not generated, but test has been terminated.");
+        }
+        // Still running but no link yet
+        return { content: [{ type: "text", text: "Job is still running, waiting for job link..." }] };
+      }
+
+      // Job link already found
+      return { content: [{ type: "text", text: `Job link is generated. Here is the job link: ${jobExecutionLink}` }] };
+
+    } catch (error: any) {
+      console.error(error.message);
+      return {
+        content: [{
+          type: "text",
+          text: `Error getting the job link: ${error.message}. \n Exiting the user request. Kindly analyze your project manually & try again later!`
+        }]
+      };
+    }
+  });
 
 const transport = new StdioServerTransport();
 server.connect(transport);

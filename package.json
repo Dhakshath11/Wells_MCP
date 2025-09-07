@@ -12,7 +12,8 @@
     "test_framework_spec": "npx tsx node_modules/.bin/mocha test/framework-spec.test.ts",
     "test_yaml_creator": "npx tsx node_modules/.bin/mocha test/yaml-creator.test.ts",
     "test_config_update": "npx tsx node_modules/.bin/mocha test/config-update.test.ts",
-    "test_import_update": "npx tsx node_modules/.bin/mocha test/import-update.test.ts"
+    "test_import_update": "npx tsx node_modules/.bin/mocha test/import-update.test.ts",
+    "test_cli_log": "npx tsx node_modules/.bin/mocha test/cli-log.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.4",

@@ -62,6 +62,19 @@
         "${workspaceFolder}/node_modules/.bin/mocha",
         "${workspaceFolder}/test/import-update.test.ts"
       ],
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug cli-log Test: cli-log.test.ts",
+      "program": "${workspaceFolder}/node_modules/.bin/tsx",
+      "args": [
+        "${workspaceFolder}/node_modules/.bin/mocha",
+        "${workspaceFolder}/test/cli-log.test.ts"
+      ],
+      "runtimeArgs": [],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
     }
   ]
 }
