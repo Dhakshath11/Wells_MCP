@@ -1,16 +1,16 @@
 import * as fs from "fs";
-import * as path from "path";
 import * as fileOps from '../../commons/fileOperations.js';
-
-
-const logFile = path.resolve('hyperexecute-cli.log');
+import { exec } from "child_process";
 
 async function waitForLogMessage(
     searchString: string,
     timeoutMs = 30000,
     intervalMs = 1000
 ): Promise<boolean> {
-    const absolutePath = path.resolve(logFile);
+    const filePath = fileOps.findFileAbsolutePath('.', 'hyperexecute-cli.log');
+    if (!filePath) {
+        return Promise.resolve(false);
+    }
 
     return new Promise((resolve, reject) => {
         const start = Date.now();
@@ -22,8 +22,8 @@ async function waitForLogMessage(
                     return resolve(false); // timeout
                 }
 
-                if (fs.existsSync(absolutePath)) {
-                    const contents = fs.readFileSync(absolutePath, "utf-8");
+                if (fs.existsSync(filePath)) {
+                    const contents = fs.readFileSync(filePath, "utf-8");
                     if (contents.toLowerCase().includes(searchString.toLowerCase())) {
                         clearInterval(timer);
                         return resolve(true); // found string
@@ -83,7 +83,10 @@ const isJobTrackStopped = () =>
 
 async function getJobLink(): Promise<string> {
     try {
-        const content = fileOps.getFileContent(logFile);
+        const filePath = fileOps.findFileAbsolutePath('.', 'hyperexecute-cli.log');
+        if (!filePath) throw new Error('hyperexecute-cli.log not found');
+
+        const content = fileOps.getFileContent(filePath);
         // Remove ANSI escape sequences (color codes, underline, etc.)
         const cleanContent = content.replace(/\u001b\[[0-9;]*m/g, "");
         // Extract the job link
@@ -112,6 +115,29 @@ async function detectFirstCLIEvent(): Promise<string | null> {
     return firstResult || null;
 }
 
+async function runTest(username: string | undefined, accessKey: string | undefined): Promise<string> {
+    try {
+        // Start the CLI command asynchronously, but don't await it
+        const childProcess = exec(`./hyperexecute --user ${username} --key ${accessKey} --config hyperexecute.yaml --no-track`);
+
+        // Optional: capture stdout asynchronously
+        let cliOutput = "";
+        childProcess.stdout?.on("data", (chunk) => {
+            cliOutput += chunk.toString();
+            console.error(chunk.toString());
+        });
+        childProcess.stderr?.on("data", (chunk) => {
+            console.error(chunk.toString());
+        });
+
+        // Delay for 5 seconds to form log file
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        return cliOutput;
+    }
+    catch (error: any) {
+        throw new Error(`Error occurred while running tests: ${error.message}`);
+    }
+}
 
 export {
     isJobTriggered,
@@ -125,5 +151,6 @@ export {
     isYAMLConfigError,
     isJobLinkGenerated,
     isJobTrackStopped,
-    detectFirstCLIEvent
+    detectFirstCLIEvent,
+    runTest
 }

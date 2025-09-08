@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { exec, execSync } from "child_process";
+import { exec } from "child_process";
 import util from "util";
 
 import { FrameworkSpecAnalyzer, AnalysisOutput } from "./tools/framework-spec";
@@ -27,7 +27,7 @@ export class HyperexecuteServer {
     private serverConnected: boolean = false;
     private jobLink: boolean = false;
     private jobDone: boolean = false;
-    private jobExecutionLink: string = "";
+    private jobExecutionLink: string = ``;
 
     constructor() {
         this.server = new McpServer({
@@ -107,7 +107,7 @@ export class HyperexecuteServer {
                     return {
                         content: [{
                             type: "text",
-                            text: `Downloaded the file, here is Response: ${stderr}`
+                            text: `Downloaded the file. ${stderr}`
                         }]
                     };
 
@@ -303,17 +303,10 @@ export class HyperexecuteServer {
                 [this.jobStarted, this.noError, this.uploadStarted, this.uploadDone, this.serverConnected, this.jobLink, this.jobDone] = Array(7).fill(false);
                 try {
                     let lastCliOutput = "";
-                    fileOps.deleteFile('hyperexecute-cli.log');
-                    exec(`./hyperexecute --user ${this.username} --key ${this.accessKey} --config hyperexecute.yaml --no-track`,
-                        (error, stdout, stderr) => {
-                            if (error || stderr) {
-                                console.error(`exec error: ${error?.message || stderr}`);
-                                return;
-                            }
-                            console.error(`stdout: ${stdout}`);
-                            lastCliOutput = stdout;
-                        }
-                    );
+                    const filePath = fileOps.findFileAbsolutePath(process.cwd(), 'hyperexecute-cli.log');
+                    if (filePath) fileOps.deleteFile('hyperexecute-cli.log');
+
+                    lastCliOutput = await cliLog.runTest(this.username, this.accessKey);
 
                     this.jobStarted = await cliLog.isJobTriggered();
                     const message = this.jobStarted ? "CLI Job triggered successfully" : `Failed to trigger CLI Job. CLI said: ${lastCliOutput || "no output yet"}`;
@@ -325,7 +318,7 @@ export class HyperexecuteServer {
                         }]
                     };
                 } catch (error: any) {
-                    console.error(error.message); // Log the error for debugging - you can see it in MCP inpsector bottom-left
+                    console.error('Error Message: \n' + error.message); // Log the error for debugging - you can see it in MCP inpsector bottom-left
                     return {
                         content: [{
                             type: "text",
