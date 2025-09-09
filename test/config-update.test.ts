@@ -1,4 +1,13 @@
-import { test, expect } from "/Users/dhakshath/Documents/Wells_MCP/lambdatest-setup.js";
+/**
+ * config-update.test.ts
+ *
+ * Test suite for Playwright config update utilities.
+ *
+ * Author: Dhakshath Amin
+ * Date: 9 September 2025
+ * Description: Validates the addition of LambdaTest capabilities and project blocks to Playwright config files using playwright-config-setup.
+ */
+
 import * as configSetup from "../src/playwright-setup/playwright-config-setup";
 
 describe("playwright-config-setup.ts", () => {

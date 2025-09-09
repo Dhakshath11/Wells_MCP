@@ -13,6 +13,15 @@ import * as cliLog from "./tools/cli-log.js";
 
 const execAsync = util.promisify(exec);
 
+/**
+ * HyperexecuteServer
+ *
+ * Main server class for Wells MCP HyperExecute integration.
+ *
+ * Author: Dhakshath Amin
+ * Date: 9 September 2025
+ * Description: Implements MCP server tools for LambdaTest HyperExecute, including CLI management, YAML creation, credentials setup, and test orchestration.
+ */
 export class HyperexecuteServer {
     private server: McpServer;
 

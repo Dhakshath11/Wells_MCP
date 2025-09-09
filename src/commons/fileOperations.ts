@@ -68,6 +68,11 @@ function findFileRelativePath(startDir: string, fileName: string): string | null
             return fullPath; // File found
         }
         if (entry.isDirectory()) {
+            // 🚫 Skip unwanted directories
+            if (["node_modules", ".git", "dist", "build"].includes(entry.name)) {
+                continue;
+            }
+
             const result = findFileRelativePath(fullPath, fileName);
             if (result) return result; // bubble up result if found
         }
@@ -75,10 +80,30 @@ function findFileRelativePath(startDir: string, fileName: string): string | null
     return null; // Not found
 }
 
+/**
+ * Deletes a file if it exists.
+ * @param filePath Path to the file to delete
+ */
 function deleteFile(filePath: string): void {
     if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
     }
+}
+
+/**
+ * Computes the relative import path from a test file to a setup file.
+ * Ensures the path is valid for both Unix and Windows environments.
+ * @param testFile Path to the test file
+ * @param setupFile Path to the setup file
+ * @returns Relative import path as a string
+ */
+function getRelativeImport(testFile: string, setupFile: string): string {
+    const testDir = path.dirname(testFile);
+    let relPath = path.relative(testDir, setupFile);
+    if (!relPath.startsWith(".")) {
+        relPath = "./" + relPath;
+    }
+    return relPath.replace(/\\/g, "/"); // for Windows paths
 }
 
 export {
@@ -86,5 +111,6 @@ export {
     writeFile,
     findFileAbsolutePath,
     findFileRelativePath,
-    deleteFile
+    deleteFile,
+    getRelativeImport
 };

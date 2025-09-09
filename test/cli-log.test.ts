@@ -1,4 +1,13 @@
-import { test, expect } from "/Users/dhakshath/Documents/Wells_MCP/lambdatest-setup.js";
+/**
+ * cli-log.test.ts
+ *
+ * Test suite for LambdaTest HyperExecute CLI log utilities.
+ *
+ * Author: Dhakshath Amin
+ * Date: 9 September 2025
+ * Description: Validates log parsing, event detection, and job link extraction from CLI logs using the cli-log module.
+ */
+
 import { expect } from 'chai';
 import * as cli from "../src/server/tools/cli-log.ts";
 import * as fileOps from "../src/commons/fileOperations.ts";

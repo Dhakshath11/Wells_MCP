@@ -1,17 +1,45 @@
+/**
+ * playwright-config-setup.ts
+ *
+ * Utility functions to update and configure Playwright test settings for LambdaTest HyperExecute integration.
+ *
+ * Author: Dhakshath Amin
+ * Date: 9 September 2025
+ * Description: Adds LambdaTest capabilities and updates the project block in playwright.config.js for cloud execution.
+ */
+
 import * as fileOps from '../commons/fileOperations.js';
 
+/**
+ * Adds or replaces the LambdaTest capabilities block in the Playwright config file.
+ * @param doc The content of the Playwright config file
+ * @returns Updated config file content with capabilities block
+ */
 const addCapabilities = (doc: string): string => {
+    // const capabilitiesBlock: string = `
+    //     const capabilities = {
+    //         browserName: "Chrome",
+    //         "LT:Options": {
+    //             user: process.env.LT_USERNAME,
+    //             accessKey: process.env.LT_ACCESS_KEY,
+    //             name: "PW-TEST"
+    //         },
+    //     };
+    // `;
+
     const capabilitiesBlock: string = `
-        const capabilities = {
-            browserName: "Chrome",
-            "LT:Options": {
-                user: process.env.LT_USERNAME,
-                accessKey: process.env.LT_ACCESS_KEY,
-                name: "PW-TEST"
-            },
-        };
-    `;
-    if (!doc.includes('const capabilities')) { doc = doc + '\n' + capabilitiesBlock; }// To Appending capabilities block to the doc
+    const capabilities = {
+        browserName: "Chrome",
+        browserVersion: "latest",
+        "LT:Options": {
+            platform: "MacOS Ventura", // specify platform
+            user: process.env.LT_USERNAME,
+            accessKey: process.env.LT_ACCESS_KEY,
+            name: "PW-TEST",
+            build: "Playwright Build 1"
+        }
+    };`;
+    if (!doc.includes('const capabilities')) { doc = capabilitiesBlock + '\n' + doc; }// To Appending capabilities block to the doc
     else {
         // Else replace the full capabilities block
         const regex = /const capabilities\s*=\s*{[\s\S]*?};/;
@@ -21,7 +49,9 @@ const addCapabilities = (doc: string): string => {
 }
 
 /**
- * Comment out project block in the doc & Add new Content
+ * Comments out the existing project block and adds a new LambdaTest project block.
+ * @param doc The content of the Playwright config file
+ * @returns Updated config file content with new project block
  */
 const replaceProjectBlock = (doc: string): string => {
     const projectBlock: string = `
@@ -63,7 +93,9 @@ const replaceProjectBlock = (doc: string): string => {
 // TODO: function for to find & change => reporter: [['html', { open: "never" }]],
 
 /**
- * Main function to setup playwright config
+ * Main function to setup Playwright config for LambdaTest HyperExecute.
+ * Finds the config file, updates capabilities and project block, and writes changes.
+ * @returns The updated config file content
  */
 function playwrightConfigSetup(): string {
     try {

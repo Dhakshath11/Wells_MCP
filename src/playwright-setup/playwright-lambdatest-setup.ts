@@ -1,7 +1,25 @@
+/**
+ * playwright-lambdatest-setup.ts
+ *
+ * Utility functions to update import paths in Playwright test files for LambdaTest integration.
+ *
+ * Author: Dhakshath Amin
+ * Date: 9 September 2025
+ * Description: Replaces Playwright imports with LambdaTest setup imports and comments out conflicting imports.
+ */
+
 import * as fileOps from '../commons/fileOperations.js';
 
+/**
+ * Replaces Playwright import statements in a test file with LambdaTest setup imports.
+ * Comments out existing Playwright imports if present and not commented.
+ * @param fileContent The content of the test file
+ * @param fileToImport The relative path to the LambdaTest setup file
+ * @returns Updated file content with correct import
+ */
 function replaceImportPaths(fileContent: string, fileToImport: string): string {
-    const importString = `import { test, expect } from "${fileToImport}";`;
+    //const importString = `import { test, expect } from "${fileToImport}";`;  //TODO: Go for this line if Tests are TS files
+    const importString = `const { test, expect } = require("${fileToImport}");`;  // Support JS test files
 
     // 1. Find if Import String is present in file & is not commented
     const lines = fileContent.split('\n');
@@ -39,23 +57,29 @@ function replaceImportPaths(fileContent: string, fileToImport: string): string {
 }
 
 
+/**
+ * Updates import paths in all provided test files to use LambdaTest setup.
+ * Finds the setup file, computes relative import, and rewrites each test file.
+ * @param testFiles Array of test file paths to update
+ */
 function updateImportPaths(testFiles: string[]): void {
     try {
         if (testFiles.length === 0) throw new Error('No test files provided');
 
-        const fileToImport = fileOps.findFileAbsolutePath('.', 'lambdatest-setup.js'); // It is a JavaScript file : Wont have any Impact
+        const fileToImport = fileOps.findFileRelativePath('.', 'lambdatest-setup.js'); // It is a JavaScript file : Wont have any Impact
         if (!fileToImport) throw new Error('lambdatest-setup.js file not found');
 
         for (const testFile of testFiles) {
             let fileContent = fileOps.getFileContent(testFile);
+            const relativeImport = fileOps.getRelativeImport(testFile, fileToImport); // Get Relative path of import file with respect to test file
             if (fileContent) {
-                fileContent = replaceImportPaths(fileContent, fileToImport);
+                fileContent = replaceImportPaths(fileContent, relativeImport);
                 fileOps.writeFile(testFile, fileContent);
             }
         }
     }
     catch (error: any) {
-        throw new Error(`Error in updateImportPaths: ${error.message}`);
+        throw new Error(`Error in update Import Paths: ${error.message}`);
     }
 }
 

@@ -1,4 +1,3 @@
-import { test, expect } from "/Users/dhakshath/Documents/Wells_MCP/lambdatest-setup.js";
 import { expect } from 'chai';
 import { normalize, NormalizedOutput } from './normalizer';
 import { describe, it } from 'mocha';

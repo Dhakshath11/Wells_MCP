@@ -1,4 +1,13 @@
-import { test, expect } from "/Users/dhakshath/Documents/Wells_MCP/lambdatest-setup.js";
+/**
+ * import-update.test.ts
+ *
+ * Test suite for Playwright import path update utilities.
+ *
+ * Author: Dhakshath Amin
+ * Date: 9 September 2025
+ * Description: Validates replacement of Playwright import paths with LambdaTest setup imports in test files using updateImportPaths.
+ */
+
 import * as importUpdate from "../src/playwright-setup/playwright-lambdatest-setup";
 
 describe("playwright-lambdatest-setup", () => {

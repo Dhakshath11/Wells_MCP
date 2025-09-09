@@ -57,4 +57,4 @@ const test = base.test.extend({
 
  
 
-export { test, expect };
+module.exports = { test, expect };
