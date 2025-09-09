@@ -12,6 +12,15 @@ import * as fs from "fs";
 import * as path from "path";
 
 /**
+ * Checks if a file exists.
+ * @param filePath Path to the file
+ * @returns True if file exists, false otherwise
+ */
+function fileExists(filePath: string): boolean {
+    return fs.existsSync(filePath);
+}
+
+/**
  * Load content from a file as a string.
  * Throws an error if the file does not exist.
  * @param filePath Path to the file
@@ -107,6 +116,7 @@ function getRelativeImport(testFile: string, setupFile: string): string {
 }
 
 export {
+    fileExists,
     getFileContent,
     writeFile,
     findFileAbsolutePath,

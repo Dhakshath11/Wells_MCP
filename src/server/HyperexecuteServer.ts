@@ -199,7 +199,7 @@ export class HyperexecuteServer {
 
                     if (["npm", "yarn", "pnpm"].includes(packageManager) && testFrameworks.some(fw => fw.includes("playwright"))) {
                         playwrightConfigSetup();
-                        updateImportPaths(testFiles);
+                        await updateImportPaths(testFiles);
                     }
                     return {
                         content: [
@@ -246,7 +246,7 @@ export class HyperexecuteServer {
                                 playwrightVersion = testFramework;
                             }
                         }
-                        result = hyperexecuteYamlCreator(projectName, projectID, playwrightVersion, testFiles[0])
+                        result = await hyperexecuteYamlCreator(projectName, projectID, playwrightVersion, testFiles[0])
                     }
                     return {
                         content: [

@@ -10,6 +10,7 @@
 
 import YAML from 'yaml';
 import * as fileOps from '../../commons/fileOperations.js';
+import { download_Playwright_hyperexecute_yaml } from '../../resources/download-file.js';
 type yaml = YAML.Document.Parsed;
 
 /**
@@ -59,16 +60,19 @@ function updateTestRunnerCommand(doc: yaml, command: string) {
 
 /**
  * Main function to create or update a hyperexecute YAML file for LambdaTest.
- * Reads a sample YAML, updates project info and test runner command, and writes the result.
+ * Reads a sample YAML downloaded from remote source, updates project info and test runner command, and writes the result.
  * @param projectName Project name for LambdaTest
  * @param projectID Project ID for LambdaTest
  * @param playwrightVersion Playwright version string (default: 'playwright@1.55.0')
  * @param testPath Path to the test file (default: 'tests/page_test.spec.js')
  * @returns The updated YAML content as a string
  */
-function hyperexecuteYamlCreator(projectName: string, projectID: string, playwrightVersion: string = 'playwright@1.55.0', testPath: string = 'tests/page_test.spec.js'): string {
+async function hyperexecuteYamlCreator(projectName: string, projectID: string, playwrightVersion: string = 'playwright@latest', testPath: string = 'tests/page_test.spec.js'): Promise<string> {
     try {
-        const doc = fileOps.getFileContent('sample_yaml_file.yaml');
+        //Download the Sample Playwright Hyperexecute YAML file
+        await download_Playwright_hyperexecute_yaml();
+
+        const doc = fileOps.getFileContent('hyperexecute.yaml');
         const docConvertedToYaml = YAML.parseDocument(doc);   // Serialize the document: string contents into YAML Object for easy operation
 
         updateProject(docConvertedToYaml, { name: projectName, id: projectID });

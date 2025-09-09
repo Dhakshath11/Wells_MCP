@@ -9,6 +9,7 @@
  */
 
 import * as fileOps from '../commons/fileOperations.js';
+import { download_Lambdatest_Setup_File } from '../resources/download-file.js';
 
 /**
  * Replaces Playwright import statements in a test file with LambdaTest setup imports.
@@ -62,9 +63,12 @@ function replaceImportPaths(fileContent: string, fileToImport: string): string {
  * Finds the setup file, computes relative import, and rewrites each test file.
  * @param testFiles Array of test file paths to update
  */
-function updateImportPaths(testFiles: string[]): void {
+async function updateImportPaths(testFiles: string[]): Promise<void> {
     try {
         if (testFiles.length === 0) throw new Error('No test files provided');
+
+        //Download the lambdatest-setup.js file
+        await download_Lambdatest_Setup_File();
 
         const fileToImport = fileOps.findFileRelativePath('.', 'lambdatest-setup.js'); // It is a JavaScript file : Wont have any Impact
         if (!fileToImport) throw new Error('lambdatest-setup.js file not found');
