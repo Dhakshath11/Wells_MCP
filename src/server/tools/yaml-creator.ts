@@ -19,10 +19,17 @@ export class HyperexecuteYaml {
     /**
      * Ensures the YAML file exists. Downloads if not present.
      */
-    private async ensureYamlFile(): Promise<void> {
+    public async ensureYamlFile(): Promise<void> {
         if (!fileOps.fileExists(this.fileName)) {
             await download_Playwright_hyperexecute_yaml();
         }
+    }
+
+    /**
+     * Downloads the YAML file.
+     */
+    private async downloadYamlFile(): Promise<void> {
+        await download_Playwright_hyperexecute_yaml();
     }
 
     /**
@@ -110,7 +117,7 @@ export class HyperexecuteYaml {
         testPath = "tests/page_test.spec.js"
     ): Promise<string> {
         try {
-            await this.ensureYamlFile();
+            await this.downloadYamlFile(); // Always Download the fresh YAML file during creation
             const doc = this.loadYaml();
 
             this.updateProject(doc, { name: projectName, id: projectID });

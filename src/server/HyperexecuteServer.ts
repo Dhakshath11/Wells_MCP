@@ -11,8 +11,6 @@ import { updateImportPaths } from "../playwright-setup/playwright-lambdatest-set
 import * as fileOps from "../commons/fileOperations.js";
 import * as cliLog from "./tools/cli-log.js";
 import * as playwrightTestDistributer from "../playwright-setup/playwright-test-distributer.js";
-import { download_Playwright_hyperexecute_yaml } from "../resources/download-file.js";
-
 
 const execAsync = util.promisify(exec);
 
@@ -466,15 +464,40 @@ export class HyperexecuteServer {
     private registerTestDistributer() {
         this.server.tool(
             "test-distributer",
-            "Distribute the tests in the framework based on user request (must be entered manually, cannot be inferred)",
+            `Distribute Playwright tests across parallel machines. Supported distribution modes: specific test, individual tests, test groups, tags, or test names.
+            (must be entered manually, cannot be inferred)
+            Distributed Inputs are updated into hyperexecute.yaml file by this tool & 'run-tests-on-hyperexecute' tool needs to be called after this tool`,
             {
-                testDistributor: z.enum(["test", "test-groups", "tags", "names"])
-                    .describe("How do you want to distribute the tests? Options: test, test-groups, tags, or names"),
-                testDistributorValue: z.string()
-                    .describe("Provide the test-Directory/test-tag/test-name based on Options selected"),
+                testDistributor: z.enum([
+                    "specific-test",
+                    "parallel-test",
+                    "group-test",
+                    "tags",
+                    "names"
+                ])
+                    .transform(val => val.toLowerCase() as typeof val) // normalize casing
+                    .describe(
+                        `Select distribution mode (case-insensitive):
+                   • specific-test → Run a specific test on a separate machine.
+                   • parallel-test → Run each individual test on a separate machine.
+                   • group-test → Run groups of tests (test.describe blocks) on separate machines.
+                   • tags → Run tests with a specific @tag on separate machines.
+                   • names → Run tests with a specific description string on separate machines.`
+                    ),
+
+                testDistributorValue: z.string().describe(
+                    `Additional filter value depending on distribution mode:
+                 • For specific-test → provide the test name (e.g. "test.spec.ts or *.spec.ts").
+                 • For tags → provide the tag name (e.g. "@smoke").
+                 • For names → provide the test description keyword (e.g. "login").
+                 • For parallel-test or group-test → provide the test directory (e.g. "tests").
+                   (must be entered manually, cannot be inferred)`
+                ),
             },
             async ({ testDistributor, testDistributorValue }) => {
                 try {
+                    const yamlcreater: HyperexecuteYaml = new HyperexecuteYaml();
+
                     // Ensure framework analyzer is available
                     if (!this.frameworkSpecObject) {
                         this.frameworkSpecObject = new FrameworkSpecAnalyzer();
@@ -492,23 +515,27 @@ export class HyperexecuteServer {
                     let command = "";
                     // Only support Node.js package managers for now
                     if (["npm", "yarn", "pnpm"].includes(packageManager)) {
-                        if(!fileOps.fileExists("hyperexecute.yaml")) {
-                            await download_Playwright_hyperexecute_yaml();
-                        }
+                        await yamlcreater.ensureYamlFile();
+
                         switch (testDistributor) {
-                            case "test":
-                                testDistributorValue = playwrightTestDistributer.testExistsInDirectory(testDistributorValue);
+                            case "specific-test":
+                                testDistributorValue = playwrightTestDistributer.does_DirectoryHaveTests(testDistributorValue);
                                 command = playwrightTestDistributer.playwrightTestDistributer_ByTest(testDistributorValue);
                                 break;
 
-                            case "test-groups":
-                                testDistributorValue = playwrightTestDistributer.testExistsInDirectory(testDistributorValue);
+                            case "parallel-test":
+                                testDistributorValue = playwrightTestDistributer.does_DirectoryHaveTests(testDistributorValue);
+                                command = playwrightTestDistributer.playwrightTestDistributer_ByTest(testDistributorValue);
+                                break;
+
+                            case "group-test":
+                                testDistributorValue = playwrightTestDistributer.does_DirectoryHaveTests(testDistributorValue);
                                 command = playwrightTestDistributer.playwrightTestDistributer_ByTestGroups(testDistributorValue);
                                 break;
 
                             case "tags":
                             case "names":
-                                playwrightTestDistributer.tagsExistsInTest(testDistributorValue);
+                                playwrightTestDistributer.does_TestContainTag(testDistributorValue);
                                 command = playwrightTestDistributer.playwrightTestDistributer_ByTagName(testDistributorValue);
                                 break;
 
@@ -525,7 +552,6 @@ export class HyperexecuteServer {
                     }
 
                     // Update YAML with the selected command
-                    const yamlcreater: HyperexecuteYaml = new HyperexecuteYaml();
                     let result = await yamlcreater.updateField("TestDiscoveryCommand", command);
                     result = await yamlcreater.updateField("TestRunnerCommand", "npx playwright test $test");
 
