@@ -178,7 +178,7 @@ class FrameworkSpecAnalyzer {
      * @param field Field name to extract
      * @returns Field value or null if not found
      */
-    public getField(field: keyof AnalysisOutput): any {
+    public getField(field: keyof AnalysisOutput): any { // -> Looking for a specific field in the analysis output
         const output = this.parseAnalysisLog();
         return output[field] || null;
     }

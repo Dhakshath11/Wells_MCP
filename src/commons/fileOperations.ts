@@ -90,6 +90,33 @@ function findFileRelativePath(startDir: string, fileName: string): string | null
 }
 
 /**
+ * Recursively search for a Folder by name in a directory tree.
+ * Returns the relative path of the first match found (case-insensitive).
+ * @param startDir Directory to start searching from
+ * @param fileName File to look for
+ * @returns Relative path if found, otherwise null
+ */
+function findFileRelativePathFolder(startDir: string, fileName: string): string | null {
+    const entries = fs.readdirSync(startDir, { withFileTypes: true });
+    for (const entry of entries) {
+        const fullPath = path.join(startDir, entry.name);
+        if (entry.name.toLocaleLowerCase().trim() === fileName.toLocaleLowerCase().trim()) {
+            return fullPath; // File found
+        }
+        if (entry.isDirectory()) {
+            // 🚫 Skip unwanted directories
+            if (["node_modules", ".git", "dist", "build"].includes(entry.name)) {
+                continue;
+            }
+
+            const result = findFileRelativePath(fullPath, fileName);
+            if (result) return result; // bubble up result if found
+        }
+    }
+    return null; // Not found
+}
+
+/**
  * Deletes a file if it exists.
  * @param filePath Path to the file to delete
  */
@@ -122,5 +149,6 @@ export {
     findFileAbsolutePath,
     findFileRelativePath,
     deleteFile,
-    getRelativeImport
+    getRelativeImport,
+    findFileRelativePathFolder
 };

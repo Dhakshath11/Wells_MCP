@@ -5,11 +5,14 @@ import { exec } from "child_process";
 import util from "util";
 
 import { FrameworkSpecAnalyzer, AnalysisOutput } from "./tools/framework-spec";
-import { hyperexecuteYamlCreator } from "./tools/yaml-creator";
+import { HyperexecuteYaml } from "./tools/yaml-creator";
 import { playwrightConfigSetup } from "../playwright-setup/playwright-config-setup";
 import { updateImportPaths } from "../playwright-setup/playwright-lambdatest-setup";
 import * as fileOps from "../commons/fileOperations.js";
 import * as cliLog from "./tools/cli-log.js";
+import * as playwrightTestDistributer from "../playwright-setup/playwright-test-distributer.js";
+import { download_Playwright_hyperexecute_yaml } from "../resources/download-file.js";
+
 
 const execAsync = util.promisify(exec);
 
@@ -27,8 +30,8 @@ export class HyperexecuteServer {
 
     // State
     private frameworkSpecObject: FrameworkSpecAnalyzer | null = null;
-    private username: string | undefined = process.env.LT_USERNAME;
-    private accessKey: string | undefined = process.env.LT_ACCESS_KEY;
+    private username: string | undefined;
+    private accessKey: string | undefined;
     private jobStarted: boolean = false;
     private noError: boolean = false;
     private uploadStarted: boolean = false;
@@ -43,7 +46,8 @@ export class HyperexecuteServer {
             name: "Hyperexecute-Wells Tool",
             version: "1.0.0",
         });
-
+        this.username = process.env.LT_USERNAME;
+        this.accessKey = process.env.LT_ACCESS_KEY;
         this.registerTools();
     }
 
@@ -59,6 +63,7 @@ export class HyperexecuteServer {
         this.registerSetupCredentials();
         this.registerRunTests();
         this.registerAnalyzeCliRun();
+        this.registerTestDistributer();
     }
 
     // -------- Tool Definitions --------
@@ -103,7 +108,8 @@ export class HyperexecuteServer {
     private registerGetCli() {
         this.server.tool(
             "get-hyperexecute-cli",
-            `Download hyperexecute CLI. Should only be called if 'hyperexecute-cli-present?' reports missing CLI.
+            `Download hyperexecute CLI & check if Hyperexecute Credentials are set in environment variables. 
+             Should only be called if 'hyperexecute-cli-present?' reports missing CLI.
              Always run 'run-hyperexecute-analyzer' after downloading the CLI.`,
             {},
             async () => {
@@ -113,10 +119,11 @@ export class HyperexecuteServer {
                         "curl -s -O https://downloads.lambdatest.com/hyperexecute/darwin/hyperexecute"
                     );
 
+                    const isCredSet = this.username != null && this.accessKey != null;
                     return {
                         content: [{
                             type: "text",
-                            text: `Downloaded the file. ${stderr}`
+                            text: `Downloaded the file ${stderr} & Hyperexecute Credentials are ${isCredSet ? `set` : 'NOT set'}`
                         }]
                     };
 
@@ -227,7 +234,7 @@ export class HyperexecuteServer {
     private registerCreateYaml() {
         this.server.tool(
             "create-hyperexecute-yaml-file",
-            `Create a hyperexecute yaml file for the this framework.`,
+            `Create a hyperexecute yaml file for the this framework prompting user to give project name & ID (must be entered manually, cannot be inferred)`,
             {
                 projectName: z.string().describe("Provide your  project name found in https://hyperexecute.lambdatest.com/hyperexecute/projects"),
                 projectID: z.string().describe("Provide your project ID"),
@@ -246,7 +253,8 @@ export class HyperexecuteServer {
                                 playwrightVersion = testFramework;
                             }
                         }
-                        result = await hyperexecuteYamlCreator(projectName, projectID, playwrightVersion, testFiles[0])
+                        const yamlcreater: HyperexecuteYaml = new HyperexecuteYaml();
+                        result = await yamlcreater.createYaml(projectName, projectID, playwrightVersion, testFiles[0]);
                     }
                     return {
                         content: [
@@ -274,13 +282,11 @@ export class HyperexecuteServer {
     private registerSetupCredentials() {
         this.server.tool(
             "setup-lambdatest-credentials",
-            "Collect LambdaTest credentials if NOT ALREADY provided from user input (must be entered manually, cannot be inferred).",
+            "Collect LambdaTest credentials if NOT set by environment variables (must be entered manually, cannot be inferred).",
             {
-                LT_USERNAME: z
-                    .string()
+                LT_USERNAME: z.string()
                     .describe("Provide your LambdaTest username Manually (Copy if from link: https://hyperexecute.lambdatest.com/hyperexecute)"),
-                LT_ACCESS_KEY: z
-                    .string()
+                LT_ACCESS_KEY: z.string()
                     .describe("Provide your LambdaTest access key Manually"),
             },
             async ({ LT_USERNAME, LT_ACCESS_KEY }) => {
@@ -455,6 +461,91 @@ export class HyperexecuteServer {
                     };
                 }
             });
+    }
+
+    private registerTestDistributer() {
+        this.server.tool(
+            "test-distributer",
+            "Distribute the tests in the framework based on user request (must be entered manually, cannot be inferred)",
+            {
+                testDistributor: z.enum(["test", "test-groups", "tags", "names"])
+                    .describe("How do you want to distribute the tests? Options: test, test-groups, tags, or names"),
+                testDistributorValue: z.string()
+                    .describe("Provide the test-Directory/test-tag/test-name based on Options selected"),
+            },
+            async ({ testDistributor, testDistributorValue }) => {
+                try {
+                    // Ensure framework analyzer is available
+                    if (!this.frameworkSpecObject) {
+                        this.frameworkSpecObject = new FrameworkSpecAnalyzer();
+                    }
+                    const testFiles: string = this.frameworkSpecObject.getField("testFiles");
+                    if (testFiles.length <= 0) {
+                        return {
+                            content: [{
+                                type: "text",
+                                text: "No test files found in the framework. Please add test files to the framework and try again."
+                            }]
+                        }
+                    }
+                    const packageManager: string = this.frameworkSpecObject.getField("packageManager") || "";
+                    let command = "";
+                    // Only support Node.js package managers for now
+                    if (["npm", "yarn", "pnpm"].includes(packageManager)) {
+                        if(!fileOps.fileExists("hyperexecute.yaml")) {
+                            await download_Playwright_hyperexecute_yaml();
+                        }
+                        switch (testDistributor) {
+                            case "test":
+                                testDistributorValue = playwrightTestDistributer.testExistsInDirectory(testDistributorValue);
+                                command = playwrightTestDistributer.playwrightTestDistributer_ByTest(testDistributorValue);
+                                break;
+
+                            case "test-groups":
+                                testDistributorValue = playwrightTestDistributer.testExistsInDirectory(testDistributorValue);
+                                command = playwrightTestDistributer.playwrightTestDistributer_ByTestGroups(testDistributorValue);
+                                break;
+
+                            case "tags":
+                            case "names":
+                                playwrightTestDistributer.tagsExistsInTest(testDistributorValue);
+                                command = playwrightTestDistributer.playwrightTestDistributer_ByTagName(testDistributorValue);
+                                break;
+
+                            default:
+                                command = "echo test"; // Fallback default - No Discovery
+                        }
+                    } else {
+                        return {
+                            content: [{
+                                type: "text",
+                                text: `Unsupported package manager "${packageManager}". Currently supported: npm, yarn, pnpm.`,
+                            }],
+                        };
+                    }
+
+                    // Update YAML with the selected command
+                    const yamlcreater: HyperexecuteYaml = new HyperexecuteYaml();
+                    let result = await yamlcreater.updateField("TestDiscoveryCommand", command);
+                    result = await yamlcreater.updateField("TestRunnerCommand", "npx playwright test $test");
+
+                    return {
+                        content: [{
+                            type: "text",
+                            text: `Test distribution updated.\n\nRunner Command:\n\`${command}\`\n\nYAML Update Result:\n${JSON.stringify(result, null, 2)}`,
+                        }],
+                    };
+                } catch (error: any) {
+                    console.error("Test distribution error:\n", error);
+                    return {
+                        content: [{
+                            type: "text",
+                            text: `Error in distributing the tests.\nReason: ${error.message}\n\nInputs:\n- Distributor: ${testDistributor}\n- Value: ${testDistributorValue}`,
+                        }],
+                    };
+                }
+            }
+        );
     }
 
     // -------- Start Server --------
