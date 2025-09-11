@@ -519,8 +519,8 @@ export class HyperexecuteServer {
 
                         switch (testDistributor) {
                             case "specific-test":
-                                testDistributorValue = playwrightTestDistributer.does_DirectoryHaveTests(testDistributorValue);
-                                command = playwrightTestDistributer.playwrightTestDistributer_ByTest(testDistributorValue);
+                                const testFiles = playwrightTestDistributer.does_TestExists(testDistributorValue);
+                                command = playwrightTestDistributer.playwrightTestDistributer_BySpecificTest(testFiles);
                                 break;
 
                             case "parallel-test":
