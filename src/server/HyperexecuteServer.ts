@@ -512,31 +512,45 @@ export class HyperexecuteServer {
                         }
                     }
                     const packageManager: string = this.frameworkSpecObject.getField("packageManager") || "";
-                    let command = "";
+                    let command = "", values: string[] = [];
                     // Only support Node.js package managers for now
                     if (["npm", "yarn", "pnpm"].includes(packageManager)) {
                         await yamlcreater.ensureYamlFile();
-
                         switch (testDistributor) {
                             case "specific-test":
-                                const testFiles = playwrightTestDistributer.does_TestExists(testDistributorValue);
-                                command = playwrightTestDistributer.playwrightTestDistributer_BySpecificTest(testFiles);
+                                const testFiles: Set<string> = new Set(); // To hold unique tests & avoid duplicates ones
+                                values = testDistributorValue.split(" "); // If multiple tests are provided, split them by space 
+                                for (const value of values) {
+                                    playwrightTestDistributer.does_TestExists(value).forEach(testFile => testFiles.add(testFile));
+                                }
+                                command = playwrightTestDistributer.playwrightTestDistributer_BySpecificTest(Array.from(testFiles));
                                 break;
 
                             case "parallel-test":
-                                testDistributorValue = playwrightTestDistributer.does_DirectoryHaveTests(testDistributorValue);
-                                command = playwrightTestDistributer.playwrightTestDistributer_ByTest(testDistributorValue);
+                                let testFolders: Set<string> = new Set(); // To hold unique tests & avoid duplicates ones
+                                values = testDistributorValue.split(" "); // If multiple folders are provided, split them by space 
+                                for (const value of values) {
+                                    testFolders.add(playwrightTestDistributer.does_DirectoryHaveTests(value));
+                                }
+                                command = playwrightTestDistributer.playwrightTestDistributer_ByTest(Array.from(testFolders));
                                 break;
 
                             case "group-test":
-                                testDistributorValue = playwrightTestDistributer.does_DirectoryHaveTests(testDistributorValue);
-                                command = playwrightTestDistributer.playwrightTestDistributer_ByTestGroups(testDistributorValue);
+                                let testGroupFolders: Set<string> = new Set(); // To hold unique tests & avoid duplicates ones
+                                values = testDistributorValue.split(" "); // If multiple folders are provided, split them by space 
+                                for (const value of values) {
+                                    testGroupFolders.add(playwrightTestDistributer.does_DirectoryHaveTests(value));
+                                }
+                                command = playwrightTestDistributer.playwrightTestDistributer_ByTestGroups(Array.from(testGroupFolders));
                                 break;
 
                             case "tags":
                             case "names":
-                                playwrightTestDistributer.does_TestContainTag(testDistributorValue);
-                                command = playwrightTestDistributer.playwrightTestDistributer_ByTagName(testDistributorValue);
+                                values = testDistributorValue.split(" "); 
+                                for (const value of values) {
+                                    playwrightTestDistributer.does_TestContainTag(value);
+                                }
+                                command = playwrightTestDistributer.playwrightTestDistributer_ByTagName(testDistributorValue.split(" "));
                                 break;
 
                             default:

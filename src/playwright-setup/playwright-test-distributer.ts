@@ -150,8 +150,8 @@ function playwrightTestDistributer_BySpecificTest(testFiles: string[]): string {
  * @returns {string} - Shell command for test discovery.
  * @throws {Error} If test discovery fails.
  */
-function playwrightTestDistributer_ByTest(testDir: string): string {
-    return `grep -nri 'test(' ${testDir} | sed -E 's/^([^:]+:[0-9]+):.*/\\1/' | sort -u`;
+function playwrightTestDistributer_ByTest(testDir: string[]): string {
+    return `grep -nri 'test(' ${testDir.join(' ')} | sed -E 's/^([^:]+:[0-9]+):.*/\\1/' | sort -u`;
 }
 
 /**
@@ -163,19 +163,33 @@ function playwrightTestDistributer_ByTest(testDir: string): string {
  * @returns {string} - Shell command for test group discovery.
  * @throws {Error} If test group discovery fails.
  */
-function playwrightTestDistributer_ByTestGroups(testDir: string): string {
-    return `grep -nri 'test.describe' ${testDir} | sed 's/:test.*//' | sort -u`;
+function playwrightTestDistributer_ByTestGroups(testDir: string[]): string {
+    return `grep -nri 'test.describe' ${testDir.join(' ')} | sed 's/:test.*//' | sort -u`;
 }
 
 /**
  * Generates a shell command to run tests **filtered by tag or name**.
  * Uses Playwright’s `--grep` option.
- *
+ * Handles Multiple tags by adding '|' between them.
+ * Example:
+ *   npx playwright test --list --grep "@smoke" | awk '/:/{print $1}' | grep -vE 'Listing|Total' | sort -u 
+ *   npx playwright test --list --grep "@smoke|@regression" | awk '/:/{print $1}' | grep -vE 'Listing|Total' | sort -u 
+ * 
+ * @param {string[]} tagName - Array of tags to filter tests.
  * @param {string} tagName - Tag or test name to filter tests.
  * @returns {string} - Shell command for filtered test execution.
  */
-function playwrightTestDistributer_ByTagName(tagName: string): string {
-    return `npx playwright test --list --grep ${tagName} | awk '/:/{print $1}' | grep -vE 'Listing|Total' | sort -u`
+function playwrightTestDistributer_ByTagName(tagName: string[]): string {
+    let testTag = tagName[0];
+    console.error(testTag);
+    // Add logic to handle multiple tags
+    for(let i = 1; i < tagName.length; i++){
+        console.error(tagName[i]);
+        testTag = testTag + `|` + tagName[i];
+        console.error(testTag);
+    }
+    testTag = `"${testTag}"`;
+    return `npx playwright test --list --grep ${testTag} \\ | awk '/:/{print $1}' | grep -vE 'Listing|Total' | sort -u`
 }
 
 export {

@@ -100,7 +100,8 @@ function findFileRelativePathFolder(startDir: string, fileName: string): string 
     const entries = fs.readdirSync(startDir, { withFileTypes: true });
     for (const entry of entries) {
         const fullPath = path.join(startDir, entry.name);
-        if (entry.name.toLocaleLowerCase().trim() === fileName.toLocaleLowerCase().trim()) {
+        if ((fullPath.toLocaleLowerCase().trim() === fileName.toLocaleLowerCase().trim())
+            || (entry.name.toLocaleLowerCase().trim() === fileName.toLocaleLowerCase().trim())) {
             return fullPath; // File found
         }
         if (entry.isDirectory()) {
@@ -109,7 +110,7 @@ function findFileRelativePathFolder(startDir: string, fileName: string): string 
                 continue;
             }
 
-            const result = findFileRelativePath(fullPath, fileName);
+            const result = findFileRelativePathFolder(fullPath, fileName);
             if (result) return result; // bubble up result if found
         }
     }
