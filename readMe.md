@@ -1,5 +1,3 @@
-### 9. test-distributer
-Discovers, groups, and distributes Playwright tests in your project. Lets you find tests by name, directory, group, or tag, and generates commands to run or update YAML configuration for distributed test execution. Useful for scaling and organizing large test suites.
 # Wells MCP HyperExecute Server
 
 ## Abstract
@@ -155,6 +153,9 @@ Runs your Playwright tests on LambdaTest HyperExecute using the CLI, credentials
 
 ### 8. analyze-hyperexecute-cli-run
 Analyzes the CLI log after a test run to find your job link and check for errors. Helps you track your test job and troubleshoot issues.
+
+### 9. test-distributer
+Discovers, groups, and distributes Playwright tests in your project. Lets you find tests by name, directory, group, or tag, and generates commands to run or update YAML configuration for distributed test execution. Useful for scaling and organizing large test suites.
 
 ---
 ### src/main.ts

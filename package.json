@@ -1,6 +1,6 @@
 {
-  "name": "@dhakshath11/wells-mcp",
-  "version": "2.0.5",
+  "name": "@dhakshath11/mcp-server",
+  "version": "2.0.6",
   "author": "Dhakshath Amin",
   "license": "ISC",
   "description": "MCP server on hyperexecute tool",
@@ -17,7 +17,7 @@
     "test_test_distributer": "mocha dist/test/test-distributer.test.js"
   },
   "bin": {
-    "wells-mcp": "dist/main.js"
+    "hyper-mcp-server": "./dist/main.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.4",
