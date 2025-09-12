@@ -1,39 +1,49 @@
 {
-  "name": "wells_mcp",
-  "version": "2.0.4",
+  "name": "@dhakshath11/wells-mcp",
+  "version": "2.0.5",
   "author": "Dhakshath Amin",
   "license": "ISC",
-  "description": "MCP server for Wells on hyperexecute tool",
-  "main": "src/main.ts",
+  "description": "MCP server on hyperexecute tool",
+  "main": "dist/main.js",
   "type": "module",
   "scripts": {
+    "build": "tsc",
     "start": "npx -y @modelcontextprotocol/inspector npx -y tsx src/main.ts",
-    "test_framework_spec": "npx tsx node_modules/.bin/mocha test/framework-spec.test.ts",
-    "test_yaml_creator": "npx tsx node_modules/.bin/mocha test/yaml-creator.test.ts",
-    "test_config_update": "npx tsx node_modules/.bin/mocha test/config-update.test.ts",
-    "test_import_update": "npx tsx node_modules/.bin/mocha test/import-update.test.ts",
-    "test_cli_log": "npx tsx node_modules/.bin/mocha test/cli-log.test.ts",
-    "test_test_distributer": "npx tsx node_modules/.bin/mocha test/test-distributer.test.ts"
+    "test_framework_spec": "mocha dist/test/framework-spec.test.js",
+    "test_yaml_creator": "mocha dist/test/yaml-creator.test.js",
+    "test_config_update": "mocha dist/test/config-update.test.js",
+    "test_import_update": "mocha dist/test/import-update.test.js",
+    "test_cli_log": "mocha dist/test/cli-log.test.js",
+    "test_test_distributer": "mocha dist/test/test-distributer.test.js"
+  },
+  "bin": {
+    "wells-mcp": "dist/main.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.4",
-    "@playwright/test": "^1.55.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.3.0",
     "micromatch": "^4.0.8",
-    "playwright": "^1.10.0",
     "yaml": "^2.8.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/chai": "^5.2.2",
+    "@types/micromatch": "^4.0.9",
     "@types/mocha": "^10.0.10",
     "chai": "^6.0.1",
     "mocha": "^11.7.2",
-    "tsx": "^4.20.5"
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
   },
   "directories": {
     "test": "test"
   },
-  "keywords": []
+  "keywords": [],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "files": [
+    "dist"
+  ]
 }

@@ -8,7 +8,7 @@
  * Description: Validates replacement of Playwright import paths with LambdaTest setup imports in test files using updateImportPaths.
  */
 
-import * as importUpdate from "../src/playwright-setup/playwright-lambdatest-setup";
+import * as importUpdate from "../src/playwright-setup/playwright-lambdatest-setup.js";
 
 describe("playwright-lambdatest-setup", () => {
     it("replace the import paths in the test files from playwright to lambdatest", async () => {

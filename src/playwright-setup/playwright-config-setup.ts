@@ -73,7 +73,7 @@ const replaceProjectBlock = (doc: string): string => {
                 // Comment out the old block
                 const commentedOld = middle
                     .split("\n")
-                    .map(line => (line.trim() ? `// ${line}` : line))
+                    .map((line: string) => (line.trim() ? `// ${line}` : line))
                     .join("\n");
 
                 return `${start}\n${commentedOld}\n${projectBlock}\n${end}`;

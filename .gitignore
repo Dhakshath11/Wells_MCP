@@ -1,11 +1,10 @@
 node_modules
 package-lock.json
 test-results
-coverage
 .DS_Store
-hyperexecute
-hyperexecute-analyze.log
+hyperexecute*
 .updatedhyperexecute.yaml
-hyperexecute-cli.log
 .hyperexecute
 mask*
+dist
+.npmrc

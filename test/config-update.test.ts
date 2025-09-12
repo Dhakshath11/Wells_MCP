@@ -8,7 +8,7 @@
  * Description: Validates the addition of LambdaTest capabilities and project blocks to Playwright config files using playwright-config-setup.
  */
 
-import * as configSetup from "../src/playwright-setup/playwright-config-setup";
+import * as configSetup from "../src/playwright-setup/playwright-config-setup.js";
 
 describe("playwright-config-setup.ts", () => {
     it("Update the file to add capabilities and projects block", () => {

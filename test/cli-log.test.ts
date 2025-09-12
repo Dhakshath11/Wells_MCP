@@ -9,8 +9,8 @@
  */
 
 import { expect } from 'chai';
-import * as cli from "../src/server/tools/cli-log.ts";
-import * as fileOps from "../src/commons/fileOperations.ts";
+import * as cli from "../src/server/tools/cli-log.js";
+import * as fileOps from "../src/commons/fileOperations.js";
 
 describe("cli-log.test.ts", function () {
     this.timeout(300000); // Allow 5mins for all tests inside this describe

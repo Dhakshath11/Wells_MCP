@@ -11,7 +11,7 @@
 
 import { exec } from "child_process";
 import util from "util";
-import * as fileOps from "../commons/fileOperations";
+import * as fileOps from "../commons/fileOperations.js";
 
 const execAsync = util.promisify(exec);
 const playwright_hyperexecute_yaml_url = "https://gist.githubusercontent.com/Dhakshath11/35a42bf955415621c2a5d4d836d22aa8/raw/hyperexecute.yaml";

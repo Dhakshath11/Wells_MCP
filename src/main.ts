@@ -8,7 +8,7 @@
  * Description: Instantiates and starts the HyperexecuteServer, enabling MCP tools and LambdaTest integration.
  */
 
-import { HyperexecuteServer } from "./server/HyperexecuteServer";
+import { HyperexecuteServer } from "./server/HyperexecuteServer.js";
 
 const app = new HyperexecuteServer();
 app.start();

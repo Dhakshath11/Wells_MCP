@@ -1,3 +1,5 @@
+### 9. test-distributer
+Discovers, groups, and distributes Playwright tests in your project. Lets you find tests by name, directory, group, or tag, and generates commands to run or update YAML configuration for distributed test execution. Useful for scaling and organizing large test suites.
 # Wells MCP HyperExecute Server
 
 ## Abstract
@@ -41,7 +43,8 @@ Wells_MCP/
 │   │   └── fileOperations.ts
 │   ├── playwright-setup/
 │   │   ├── playwright-config-setup.ts
-│   │   └── playwright-lambdatest-setup.ts
+│   │   ├── playwright-lambdatest-setup.ts
+│   │   └── playwright-test-distributer.ts
 │   ├── normalizer.ts
 │   └── analyzer.ts
 ├── test/
@@ -125,7 +128,35 @@ Update dependencies and scripts as needed for your project.
 
 ---
 
-## File-by-File Breakdown
+## Server Tools Overview
+
+The MCP server provides a set of tools to help you manage, analyze, and run Playwright tests on LambdaTest HyperExecute. Here’s a quick overview of each tool and what it does:
+
+### 1. check-hyperexecute-cli-present
+Checks if the HyperExecute CLI is installed in your project. Use this before running any analysis or tests.
+
+### 2. get-hyperexecute-cli
+Downloads the HyperExecute CLI if it’s missing, and checks if your LambdaTest credentials are set. Run this if the CLI is not present.
+
+### 3. run-hyperexecute-analyzer
+Runs the HyperExecute analyzer to inspect your project and return a summary of your test framework, runtime, and package manager. Requires the CLI to be installed.
+
+### 4. make-hyperexecute-compatible
+Updates your Playwright configuration and test files to ensure compatibility with HyperExecute. Automatically adds LambdaTest capabilities and updates imports.
+
+### 5. create-hyperexecute-yaml-file
+Prompts you to enter your LambdaTest project name and ID, then generates a `hyperexecute.yaml` file tailored for your project. This file is required for running tests on HyperExecute.
+
+### 6. setup-lambdatest-credentials
+Lets you manually set your LambdaTest username and access key if they aren’t already set in your environment. Credentials are needed to run tests on LambdaTest.
+
+### 7. run-tests-on-hyperexecute
+Runs your Playwright tests on LambdaTest HyperExecute using the CLI, credentials, and YAML file. Automates the cloud test execution process.
+
+### 8. analyze-hyperexecute-cli-run
+Analyzes the CLI log after a test run to find your job link and check for errors. Helps you track your test job and troubleshoot issues.
+
+---
 ### src/main.ts
 Entry point. Instantiates and starts the `HyperexecuteServer`.
 
@@ -144,11 +175,15 @@ Creates and updates `hyperexecute.yaml` files, including project metadata and te
 ### src/commons/fileOperations.ts
 File system utilities for reading, writing, searching, and deleting files, plus relative import path calculation.
 
+
 ### src/playwright-setup/playwright-config-setup.ts
 Updates Playwright config files to add LambdaTest capabilities and project blocks for cloud execution.
 
 ### src/playwright-setup/playwright-lambdatest-setup.ts
 Replaces Playwright imports in test files with LambdaTest setup imports and comments out conflicting imports.
+
+### src/playwright-setup/playwright-test-distributer.ts
+Discovers and distributes Playwright tests in the project. Provides helpers to determine test directories, generate shell commands for test discovery, and support test grouping/tagging for efficient test runs. Integrates with MCP server tools for advanced test orchestration.
 
 ### test/
 Contains test suites for each major module, validating functionality and integration.

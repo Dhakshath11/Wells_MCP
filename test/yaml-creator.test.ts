@@ -8,7 +8,7 @@
  * Description: Validates creation and printing of LambdaTest hyperexecute YAML files using yaml-creator module.
  */
 
-import { HyperexecuteYaml } from "../src/server/tools/yaml-creator";
+import { HyperexecuteYaml } from "../src/server/tools/yaml-creator.js";
 
 describe("yaml-creator.ts", () => {
     it("should create file and print result", async () => {

@@ -8,7 +8,7 @@
  * Description: Validates parsing and printing of analysis results from framework-spec module.
  */
 
-import * as analyzer from "../src/server/tools/framework-spec";
+import * as analyzer from "../src/server/tools/framework-spec.js";
 
 describe("framework-spec.ts", () => {
   it("should parse analysis log and print result", () => {

@@ -12,7 +12,7 @@
  */
 
 import * as fileOps from '../commons/fileOperations.js';
-import { FrameworkSpecAnalyzer } from '../server/tools/framework-spec';
+import { FrameworkSpecAnalyzer } from '../server/tools/framework-spec.js';
 import micromatch from 'micromatch';
 
 // Returns the test files that match the given test name or glob pattern.
@@ -189,7 +189,7 @@ function playwrightTestDistributer_ByTagName(tagName: string[]): string {
         console.error(testTag);
     }
     testTag = `"${testTag}"`;
-    return `npx playwright test --list --grep ${testTag} \\ | awk '/:/{print $1}' | grep -vE 'Listing|Total' | sort -u`
+    return `npx playwright test --list --grep ${testTag} | awk '/:/{print $1}' | grep -vE 'Listing|Total' | sort -u`
 }
 
 export {

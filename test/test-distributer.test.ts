@@ -1,5 +1,16 @@
-import * as distributer from "../src/playwright-setup/playwright-test-distributer.ts";
-import { HyperexecuteYaml } from "../src/server/tools/yaml-creator";
+/**
+ * test-distributer.test.ts
+ *
+ * Test suite for Playwright test distribution utilities.
+ *
+ * Author: Dhakshath Amin
+ * Date: 12 September 2025
+ * Description: Validates test discovery, grouping, and YAML update logic for Playwright tests using the distributer and yaml-creator modules.
+ * Covers distribution by test name, directory, group, tag, and updates YAML configuration accordingly.
+ */
+
+import * as distributer from "../src/playwright-setup/playwright-test-distributer.js";
+import { HyperexecuteYaml } from "../src/server/tools/yaml-creator.js";
 
 const yamlcreater: HyperexecuteYaml = new HyperexecuteYaml();
 let testDir: string = ``, command = ``, result = ``;

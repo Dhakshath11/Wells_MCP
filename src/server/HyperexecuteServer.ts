@@ -4,10 +4,10 @@ import { z } from "zod";
 import { exec } from "child_process";
 import util from "util";
 
-import { FrameworkSpecAnalyzer, AnalysisOutput } from "./tools/framework-spec";
-import { HyperexecuteYaml } from "./tools/yaml-creator";
-import { playwrightConfigSetup } from "../playwright-setup/playwright-config-setup";
-import { updateImportPaths } from "../playwright-setup/playwright-lambdatest-setup";
+import { FrameworkSpecAnalyzer, AnalysisOutput } from "./tools/framework-spec.js";
+import { HyperexecuteYaml } from "./tools/yaml-creator.js";
+import { playwrightConfigSetup } from "../playwright-setup/playwright-config-setup.js";
+import { updateImportPaths } from "../playwright-setup/playwright-lambdatest-setup.js";
 import * as fileOps from "../commons/fileOperations.js";
 import * as cliLog from "./tools/cli-log.js";
 import * as playwrightTestDistributer from "../playwright-setup/playwright-test-distributer.js";
