@@ -203,8 +203,9 @@ export class HyperexecuteServer {
                     const testFiles: string[] = this.frameworkSpecObject.getField('testFiles');
 
                     if (["npm", "yarn", "pnpm"].includes(packageManager) && testFrameworks.some(fw => fw.includes("playwright"))) {
+                        const language: string = this.frameworkSpecObject.getField('language').toLowerCase();
                         playwrightConfigSetup();
-                        await updateImportPaths(testFiles);
+                        await updateImportPaths(testFiles, language);
                     }
                     return {
                         content: [
