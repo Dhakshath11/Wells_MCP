@@ -93,7 +93,7 @@ async function updateImportPaths(testFiles: string[], language: string = 'javasc
             let fileContent = fileOps.getFileContent(testFile);
             const relativeImport = fileOps.getRelativeImport(testFile, fileToImport); // Get Relative path of import file with respect to test file
             if (fileContent) {
-                fileContent = replaceImportPaths(fileContent, relativeImport, language);
+                fileContent = replaceImportPaths(fileContent, relativeImport.split('.ts')[0], language);
                 fileOps.writeFile(testFile, fileContent);
             }
         }

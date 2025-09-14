@@ -17,3 +17,11 @@ describe("playwright-lambdatest-setup", () => {
         console.log("Check if these files are updated to new i ports \n" + testFiles);
     });
 });
+
+describe("playwright-lambdatest-setup", () => {
+    it("replace the import paths in the test files from playwright to lambdatest", async () => {
+        const testFiles: string[] = ['test/framework-spec.test.ts', 'test/yaml-creator.test.ts'];
+        await importUpdate.updateImportPaths(testFiles, 'typescript');
+        console.log("Check if these files are updated to new i ports \n" + testFiles);
+    });
+});

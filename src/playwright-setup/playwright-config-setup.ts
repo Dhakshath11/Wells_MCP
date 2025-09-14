@@ -99,8 +99,10 @@ const replaceProjectBlock = (doc: string): string => {
  */
 function playwrightConfigSetup(): string {
     try {
-        const filePath = fileOps.findFileRelativePath('.', 'playwright.config.js');  // Look for the file in the root directory and all subdirectories
-        if (!filePath) throw new Error('playwright.config.js not found');
+        let filePath = fileOps.findFileRelativePath('.', 'playwright.config.js');  // Look for the file in the root directory and all subdirectories
+        if (!filePath)
+            filePath = fileOps.findFileRelativePath('.', 'playwright.config.ts'); // Look for the file in the root directory and all subdirectories
+        if (!filePath) throw new Error('playwright.config.js or playwright.config.ts not found');
 
         let doc = fileOps.getFileContent(filePath);
         doc = addCapabilities(doc);  // Post Adding capabilities block to the doc

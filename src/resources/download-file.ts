@@ -16,7 +16,7 @@ import * as fileOps from "../commons/fileOperations.js";
 const execAsync = util.promisify(exec);
 const playwright_hyperexecute_yaml_url = "https://gist.githubusercontent.com/Dhakshath11/35a42bf955415621c2a5d4d836d22aa8/raw/hyperexecute.yaml";
 const lambdatest_setup_file_url_javaScript = "https://gist.githubusercontent.com/Dhakshath11/ce6cf8443190c3ae2f0d12bf9229b45d/raw/lambdatest-setup.js";
-const lambdatest_setup_file_url_typeScript = "https://gist.githubusercontent.com/Dhakshath11/621c503189b851a810b7b956aea9de71/raw/lambdatest-setup.js";
+const lambdatest_setup_file_url_typeScript = "https://gist.githubusercontent.com/Dhakshath11/621c503189b851a810b7b956aea9de71/raw/lambdatest-setup.ts";
 
 async function downloadFile(url: string, target: string): Promise<boolean> {
   try {
