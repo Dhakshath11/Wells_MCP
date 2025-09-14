@@ -9,6 +9,7 @@
  */
 
 import * as fs from "fs";
+import { framework_comp } from "../../commons/framework_comp";
 
 /**
  * Describes the structure of the parsed analysis output.
@@ -147,9 +148,17 @@ class FrameworkSpecAnalyzer {
             const packageManagerVersion = packageManagerVersionMatch
                 ? packageManagerVersionMatch[1].trim()
                 : null;
-            const testFrameworks = testFrameworksMatch
-                ? this.normalizeFrameworks(testFrameworksMatch[1])
-                : [];
+                
+            let testFrameworks: string[];
+            const safePM = packageManager ?? "";
+            if (testFrameworksMatch) {
+                const normalized = this.normalizeFrameworks(testFrameworksMatch[1]);
+                testFrameworks = normalized && normalized.length > 0
+                    ? normalized
+                    : framework_comp(safePM);
+            } else {            // Adding Fallback for mechanisum to extract test frameworks if hyperexecute-analyze.log does not have test frameworks
+                testFrameworks = framework_comp(safePM);
+            }
             const testFiles = this.extractTestFiles(msg);
 
             // Cache the result
