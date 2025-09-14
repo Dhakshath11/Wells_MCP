@@ -1,6 +1,6 @@
 {
   "name": "@dhakshath11/mcp-server",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "author": "Dhakshath Amin",
   "license": "ISC",
   "description": "MCP server on hyperexecute tool",
@@ -8,7 +8,9 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "npx -y @modelcontextprotocol/inspector npx -y tsx src/main.ts",
+    "help": "npx -y tsx src/main.ts --help",
+    "version": "npx -y tsx src/main.ts --version",
+    "inspecter": "npx -y @modelcontextprotocol/inspector npx -y tsx src/main.ts",
     "test_framework_spec": "npx tsx node_modules/.bin/mocha test/framework-spec.test.ts",
     "test_yaml_creator": "npx tsx node_modules/.bin/mocha test/yaml-creator.test.ts",
     "test_config_update": "npx tsx node_modules/.bin/mocha test/config-update.test.ts",

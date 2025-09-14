@@ -9,7 +9,7 @@
  */
 
 import * as fs from "fs";
-import { framework_comp } from "../../commons/framework_comp";
+import { framework_comp } from "../../commons/framework_comp.js";
 
 /**
  * Describes the structure of the parsed analysis output.
