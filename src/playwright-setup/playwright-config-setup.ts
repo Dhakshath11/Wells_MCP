@@ -49,46 +49,110 @@ const addCapabilities = (doc: string): string => {
 }
 
 /**
- * Comments out the existing project block and adds a new LambdaTest project block.
- * @param doc The content of the Playwright config file
- * @returns Updated config file content with new project block
+ * Replaces the existing `projects` array in a Playwright config file with a LambdaTest project block.
+ * - Comments out the old projects.
+ * - Adds a new LambdaTest project configuration.
+ * - If the `projects` array does not exist, it will create it at the end.
+ * - Safely handles:
+ *    - Nested brackets inside objects or arrays
+ *    - Strings containing brackets (single, double, or backticks)
+ *    - Single-line (`//`) and multi-line (`* ... *`) comments
+ * - Prevents duplicate insertion if the LambdaTest block already exists.
+ * 
+ * @param doc The content of the Playwright config file as a string
+ * @returns The updated config content as a string
  */
 const replaceProjectBlock = (doc: string): string => {
-    const projectBlock: string = `
-    {
-      use: {
-        connectOptions: {
-          wsEndpoint: \`wss://cdp.lambdatest.com/playwright?capabilities=\${encodeURIComponent(JSON.stringify(capabilities))}\`
-        },
+    const projectBlock = `
+  {
+    use: {
+      connectOptions: {
+        wsEndpoint: \`wss://cdp.lambdatest.com/playwright?capabilities=\${encodeURIComponent(JSON.stringify(capabilities))}\`
+      },
       viewport: { width: 1280, height: 720 }
-      }
-    },
+    }
+  },
   `;
-    if (!doc.includes(projectBlock)) {
-        // TODO: Add condition to check if above string already present & not commented out
-        doc = doc.replace(
-            /(projects\s*:\s*\[)([\s\S]*?)(\])/,
-            (__match, start, middle, end) => {
-                0
-                // Comment out the old block
-                const commentedOld = middle
-                    .split("\n")
-                    .map((line: string) => (line.trim() ? `// ${line}` : line))
-                    .join("\n");
 
-                return `${start}\n${commentedOld}\n${projectBlock}\n${end}`;
-            }
-            // Single Regex grouped by 3 brackets, 
-            // Group1 -> (projects\s*:\s*\[) says projects<OPTIONAL_SPACE>:<OPTIONAL_SPACE>:>[ so that 'project:[', 'project: [', 'project : [' all are matched => start
-            // Group2 -> ([\s\S]*?) says any content in between the brackets => middle
-            // Group3 -> (\]) says ] => end
-            // Group -> 'Group1, Group2, Group3' combined => match
-        );
+    // Skip if the block is already present
+    if (doc.includes(projectBlock)) {
+        return doc;
     }
 
-    return doc;
-};
+    const chars = doc.split("");
+    let startIndex = -1;
+    let bracketStack: string[] = [];
+    let inString: string | null = null;
+    let inSingleLineComment = false;
+    let inMultiLineComment = false;
+    let i = 0;
 
+    // Find "projects" property start
+    while (i < chars.length) {
+        if (!inString && !inSingleLineComment && !inMultiLineComment) {
+            const remaining = doc.slice(i);
+            const match = remaining.match(/projects\s*:/i);
+            if (match) {
+                startIndex = i + match.index! + match[0].length;
+                // Skip to first [
+                while (chars[startIndex] !== "[" && startIndex < chars.length) startIndex++;
+                bracketStack.push("[");
+                i = startIndex + 1;
+                break;
+            }
+        }
+        i++;
+    }
+
+    if (startIndex === -1) {
+        // Not found, append at end
+        return doc + "\nprojects: [" + projectBlock + "],\n";
+    }
+
+    let endIndex = startIndex + 1;
+    while (endIndex < chars.length && bracketStack.length > 0) {
+        const c = chars[endIndex];
+
+        // Handle string start/end
+        if (!inString && !inSingleLineComment && !inMultiLineComment && (c === '"' || c === "'" || c === "`")) {
+            inString = c;
+        } else if (inString === c && chars[endIndex - 1] !== "\\") {
+            inString = null;
+        }
+        // Handle comments
+        else if (!inString && !inMultiLineComment && c === "/" && chars[endIndex + 1] === "/") {
+            inSingleLineComment = true;
+            endIndex++;
+        } else if (!inString && !inSingleLineComment && c === "/" && chars[endIndex + 1] === "*") {
+            inMultiLineComment = true;
+            endIndex++;
+        } else if (inSingleLineComment && c === "\n") {
+            inSingleLineComment = false;
+        } else if (inMultiLineComment && c === "*" && chars[endIndex + 1] === "/") {
+            inMultiLineComment = false;
+            endIndex++;
+        }
+
+        // Count brackets only if not inside string/comment
+        if (!inString && !inSingleLineComment && !inMultiLineComment) {
+            if (c === "[") bracketStack.push("[");
+            else if (c === "]") bracketStack.pop();
+        }
+
+        endIndex++;
+    }
+
+    // Comment out old block
+    const oldBlock = doc.slice(startIndex + 1, endIndex - 1);
+    const commentedOld = oldBlock
+        .split("\n")
+        .map(line => (line.trim() ? "// " + line : line))
+        .join("\n");
+
+    const updatedDoc = doc.slice(0, startIndex + 1) + "\n" + commentedOld + "\n" + projectBlock + doc.slice(endIndex - 1);
+
+    return updatedDoc;
+}
 
 // TODO: function for to find & change => reporter: [['html', { open: "never" }]],
 
