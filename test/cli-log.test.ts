@@ -13,6 +13,7 @@ import * as cli from "../src/server/tools/cli-log.js";
 import * as fileOps from "../src/commons/fileOperations.js";
 
 describe("cli-log.test.ts", function () {
+    console.log("--- Test Started: Waiting for few minutes for results ---");
     this.timeout(300000); // Allow 5mins for all tests inside this describe
 
     it("Find CLI Logs", async () => {
@@ -20,7 +21,6 @@ describe("cli-log.test.ts", function () {
 
         const results = {
             jobTriggered: await cli.isJobTriggered(),
-            jobLink: await cli.getJobLink(),
             invalidCreds: await cli.isInvalidCredentials(),
             projectNotFound: await cli.isProjectNotFound(),
             uploadArchiveStarted: await cli.isUploadArchiveStarted(),
@@ -28,6 +28,8 @@ describe("cli-log.test.ts", function () {
             serverConnectionStarted: await cli.isServerConnectionStarted(),
             jobLinkGenerated: await cli.isJobLinkGenerated(),
             jobTrackStopped: await cli.isJobTrackStopped(),
+            yamlNotFound: await cli.isYAMLNotFound(),
+            jobLink: await cli.getJobLink(),
         };
 
         console.log(results);
@@ -293,4 +295,8 @@ const fileContents =
 {"level":"warn","time":"2025-09-05T15:47:11.005+0530","caller":"globalconfigvalidator/setup.go:50","msg":"Found key credentials in env and cli flag both, credentials in env will be ignored"}
 {"level":"debug","time":"2025-09-05T15:47:12.573+0530","caller":"cmd/bin.go:144","msg":"cli os: darwin, cli arch: arm64"}
 {"level":"error","time":"2025-09-05T15:47:14.067+0530","caller":"cmd/bin.go:150","msg":"2025-09-05T15:47:11+05:30    error    \u001b[91mERR::UP::VER\u001b[0m     Unable to fetch latest version from upstream  \u001b[91mERR::HTTP::RESP\u001b[0m     non-20x status code 401    Invalid user/key credentials"}
+
+
+{"level":"debug","time":"2025-09-17T18:40:05.900+0530","caller":"cmd/bin.go:398","msg":"Exiting application due to error \u001b[91mERR::NO::HTY\u001b[0m     Unable to find hyperexecute config file.    No file found at location hyperexecute.yaml"}
+
 `;

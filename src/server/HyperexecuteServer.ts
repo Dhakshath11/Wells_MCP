@@ -384,6 +384,9 @@ export class HyperexecuteServer {
                             case "YAMLConfigError":
                                 message = "Invalid yaml content. Please create a new valid hyperexecute.yaml and run tests again.";
                                 break;
+                            case "YAMLNotFound":
+                                message = "YAML config file not found. Please create a new hyperexecute.yaml file and run tests again.";
+                                break;
                             default:
                                 message = "None of the errors are found, can proceed looking for the job link in cli logs.";
                                 this.noError = true;

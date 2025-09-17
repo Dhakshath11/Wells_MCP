@@ -90,6 +90,9 @@ const isYAMLParseError = () =>
 /** Checks for YAML config error. */
 const isYAMLConfigError = () =>
     checkLogForMessage("Invalid yaml content", 30000, 2000);
+/** Checks for YAML not Found. */
+const isYAMLNotFound = () =>
+    checkLogForMessage("Unable to find hyperexecute config file", 30000, 2000);
 /** Checks if archive upload started. */
 const isUploadArchiveStarted = () =>
     checkLogForMessage("Creating archive", 30000, 2000);
@@ -137,6 +140,7 @@ async function detectFirstCLIEvent(): Promise<string | null> {
         { fn: isProjectNotFound, type: "ProjectNotFound" },
         { fn: isYAMLParseError, type: "YAMLParseError" },
         { fn: isYAMLConfigError, type: "YAMLConfigError" },
+        { fn: isYAMLNotFound, type: "YAMLNotFound" }
     ];
 
     const firstResult = await Promise.race(
@@ -189,5 +193,6 @@ export {
     isJobLinkGenerated,
     isJobTrackStopped,
     detectFirstCLIEvent,
+    isYAMLNotFound,
     runTest
 }
