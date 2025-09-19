@@ -116,6 +116,34 @@ class FrameworkSpecAnalyzer {
     }
 
     /**
+     * Retrieves a list of test frameworks based on the provided package manager and log match results.
+     *
+     * This method first normalizes any frameworks found in the log match. If the package manager is Maven or Gradle,
+     * or if no frameworks were found in the log, it extracts frameworks based on the package manager.
+     * The final result is a deduplicated array combining both sources.
+     *
+     * @param packageManager - The name of the package manager (e.g., "maven", "gradle").
+     * @param testFrameworksMatch - The RegExp match array containing framework information from logs, or null if not available.
+     * @returns An array of unique test framework names relevant to the project.
+     */
+    private getTestFrameworks(packageManager: string, testFrameworksMatch: RegExpMatchArray | null): string[] {
+        const safePM = packageManager?.trim().toLowerCase() ?? "";
+        let testFrameworks: string[] = [];
+
+        // Extract frameworks from log if present
+        const normalized = testFrameworksMatch ? this.normalizeFrameworks(testFrameworksMatch[1]) : [];
+
+        // Extract frameworks from package manager (Maven/Gradle) if needed
+        const pmFrameworks = (safePM === "maven" || safePM === "gradle" || normalized.length === 0)
+            ? framework_comp(safePM)
+            : [];
+
+        // Merge & dedupe if both exist
+        testFrameworks = Array.from(new Set([...normalized, ...pmFrameworks]));
+        return testFrameworks;
+    }
+
+    /**
      * Parses the last line of the analysis log file and returns structured output.
      * Uses caching to avoid re-parsing the same file.
      * @param forceRefresh Force refresh the cache
@@ -137,7 +165,7 @@ class FrameworkSpecAnalyzer {
             const languageMatch = msg.match(/Language:([^\s]+)/);
             const runtimeMatch = msg.match(/RuntimeVersion:([^\n]+)/);
             const packageManagerMatch = msg.match(/PackageManager:(\w+)/);
-            const packageManagerVersionMatch = msg.match(/PackageManagerVersion:([^\n]+)/);
+            const packageManagerVersionMatch = msg.match(/PackageManagerVersion:([\w .()-]*?\d+(?:\.\d+)*)(?=\s)/);
             const testFrameworksMatch = msg.match(/TestFrameworks:\[([^\]]*)\]/);
 
             const language = languageMatch ? languageMatch[1].trim() : "";
@@ -148,17 +176,7 @@ class FrameworkSpecAnalyzer {
             const packageManagerVersion = packageManagerVersionMatch
                 ? packageManagerVersionMatch[1].trim()
                 : null;
-                
-            let testFrameworks: string[];
-            const safePM = packageManager ?? "";
-            if (testFrameworksMatch) {
-                const normalized = this.normalizeFrameworks(testFrameworksMatch[1]);
-                testFrameworks = normalized && normalized.length > 0
-                    ? normalized
-                    : framework_comp(safePM);
-            } else {            // Adding Fallback for mechanisum to extract test frameworks if hyperexecute-analyze.log does not have test frameworks
-                testFrameworks = framework_comp(safePM);
-            }
+            const testFrameworks: string[] = this.getTestFrameworks(packageManager ?? "", testFrameworksMatch);
             const testFiles = this.extractTestFiles(msg);
 
             // Cache the result
