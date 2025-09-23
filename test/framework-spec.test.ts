@@ -183,6 +183,23 @@ test {
 }
 `;
 
+const featureFileContent = `
+@DeleteRequest
+Feature: Delete user in DB
+
+  Background:
+    * url baseURL
+    * header Accept = 'application/json'
+    * header x-api-key = 'reqres-free-v1'
+
+  @UpdateUser
+  Scenario: Delete Existing User
+    Given path 'api/users/2'
+    When method DELETE
+    Then status 204
+    And print response
+`;
+
 
 const createMockLogFile = (name: string, content: string) => {
   fileOps.writeFile(name, content);
@@ -198,6 +215,7 @@ const runFrameworkAnalysisTest = (
     it(testName, () => {
       // Create log file
       createMockLogFile("hyperexecute-analyze.log", logContent);
+      createMockLogFile("TestFeature.feature", featureFileContent);  // To ensure Karate Files is detected :- Only for Maven & Gradle Projects
 
       // Create any extra project files
       for (const [fileName, content] of Object.entries(extraFiles)) {
@@ -210,6 +228,7 @@ const runFrameworkAnalysisTest = (
 
       // Cleanup
       fileOps.deleteFile("hyperexecute-analyze.log");
+      fileOps.deleteFile("TestFeature.feature");
       for (const fileName of Object.keys(extraFiles)) {
         fileOps.deleteFile(fileName);
       }

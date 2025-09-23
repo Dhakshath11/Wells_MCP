@@ -10,6 +10,7 @@
 
 import * as fs from "fs";
 import { framework_comp } from "../../commons/framework_comp.js";
+import * as cmd from "../../commons/cmdOperations.js";
 
 /**
  * Describes the structure of the parsed analysis output.
@@ -144,6 +145,30 @@ class FrameworkSpecAnalyzer {
     }
 
     /**
+     * Retrieves a list of test files for the project, with special handling for Karate frameworks.
+     *
+     * This method first extracts test files from the provided log message. If the detected frameworks include "karate",
+     * it executes the `snooper` command synchronously to collect `.feature` file paths associated with Karate tests.
+     * The results from both sources (log extraction and snooper) are merged and deduplicated to ensure a clean list
+     * of unique test files.
+     *
+     * @param msg - The raw log message string containing test execution details.
+     * @param testFrameworks - An array of detected test frameworks (e.g., ["junit", "karate"]).
+     * @returns A unique array of test file paths relevant to the project.
+     */
+    private getTestFiles(msg: string, testFrameworks: string[]): string[] {
+        let testFiles = this.extractTestFiles(msg);
+        if (testFrameworks.some(f => f.toLowerCase().includes("karate"))) {
+            try {
+                const stdout = cmd.getFeatureFiles();
+                const karateFiles = stdout.split("\n").map(f => f.trim()).filter(Boolean);
+                testFiles = Array.from(new Set([...testFiles, ...karateFiles]));
+            } catch (error) { }
+        }
+        return testFiles;
+    }
+
+    /**
      * Parses the last line of the analysis log file and returns structured output.
      * Uses caching to avoid re-parsing the same file.
      * @param forceRefresh Force refresh the cache
@@ -177,7 +202,7 @@ class FrameworkSpecAnalyzer {
                 ? packageManagerVersionMatch[1].trim()
                 : null;
             const testFrameworks: string[] = this.getTestFrameworks(packageManager ?? "", testFrameworksMatch);
-            const testFiles = this.extractTestFiles(msg);
+            const testFiles: string[] = this.getTestFiles(msg, testFrameworks);
 
             // Cache the result
             this.cachedOutput = {

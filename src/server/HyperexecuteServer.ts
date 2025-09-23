@@ -11,6 +11,7 @@ import { updateImportPaths } from "../playwright-setup/playwright-lambdatest-set
 import * as fileOps from "../commons/fileOperations.js";
 import * as cliLog from "./tools/cli-log.js";
 import * as playwrightTestDistributer from "../playwright-setup/playwright-test-distributer.js";
+import { MavenTestDistributor } from "../maven/maven-test-distributer.js"
 
 const execAsync = util.promisify(exec);
 
@@ -61,7 +62,8 @@ export class HyperexecuteServer {
         this.registerSetupCredentials();
         this.registerRunTests();
         this.registerAnalyzeCliRun();
-        this.registerTestDistributer();
+        this.registerPlaywrightTestDistributer();
+        this.registerKarateTestDistributer();
     }
 
     // -------- Tool Definitions --------
@@ -244,6 +246,7 @@ export class HyperexecuteServer {
                     const packageManager: string = this.frameworkSpecObject.getField('packageManager');
                     const testFrameworks: string[] = this.frameworkSpecObject.getField('testFrameworks');
                     const testFiles: string[] = this.frameworkSpecObject.getField('testFiles');
+                    const yamlcreater: HyperexecuteYaml = new HyperexecuteYaml();
 
                     let playwrightVersion: string = '', result: string = '';
                     if (packageManager === 'npm' || packageManager === 'yarn' || packageManager === 'pnpm') {
@@ -252,8 +255,10 @@ export class HyperexecuteServer {
                                 playwrightVersion = testFramework;
                             }
                         }
-                        const yamlcreater: HyperexecuteYaml = new HyperexecuteYaml();
-                        result = await yamlcreater.createYaml(projectName, projectID, playwrightVersion, testFiles[0]);
+                        result = await yamlcreater.createYamlForPlaywright(projectName, projectID, playwrightVersion, testFiles[0]);
+                    }
+                    else if (testFrameworks.some(fw => fw.includes("karate"))) {
+                        result = await yamlcreater.createYamlForKarate(projectName, projectID, packageManager);
                     }
                     return {
                         content: [
@@ -465,9 +470,9 @@ export class HyperexecuteServer {
             });
     }
 
-    private registerTestDistributer() {
+    private registerPlaywrightTestDistributer() {
         this.server.tool(
-            "test-distributer",
+            "test-distributer-playwright",
             `Distribute Playwright tests across parallel machines. Supported distribution modes: specific test, individual tests, test groups, tags, or test names.
             (must be entered manually, cannot be inferred)
             Distributed Inputs are updated into hyperexecute.yaml file by this tool & 'run-tests-on-hyperexecute' tool needs to be called after this tool`,
@@ -506,7 +511,7 @@ export class HyperexecuteServer {
                     if (!this.frameworkSpecObject) {
                         this.frameworkSpecObject = new FrameworkSpecAnalyzer();
                     }
-                    const testFiles: string = this.frameworkSpecObject.getField("testFiles");
+                    const testFiles: string[] = this.frameworkSpecObject.getField("testFiles");
                     if (testFiles.length <= 0) {
                         return {
                             content: [{
@@ -519,7 +524,7 @@ export class HyperexecuteServer {
                     let command = "", values: string[] = [];
                     // Only support Node.js package managers for now
                     if (["npm", "yarn", "pnpm"].includes(packageManager)) {
-                        await yamlcreater.ensureYamlFile();
+                        await yamlcreater.ensureYamlFile_Playwright();
                         switch (testDistributor) {
                             case "specific-test":
                                 const testFiles: Set<string> = new Set(); // To hold unique tests & avoid duplicates ones
@@ -550,7 +555,7 @@ export class HyperexecuteServer {
 
                             case "tags":
                             case "names":
-                                values = testDistributorValue.split(" "); 
+                                values = testDistributorValue.split(" ");
                                 for (const value of values) {
                                     playwrightTestDistributer.does_TestContainTag(value);
                                 }
@@ -580,7 +585,7 @@ export class HyperexecuteServer {
                         }],
                     };
                 } catch (error: any) {
-                    console.error("Test distribution error:\n", error);
+                    console.error("Playwright Test distribution error:\n", error);
                     return {
                         content: [{
                             type: "text",
@@ -592,6 +597,68 @@ export class HyperexecuteServer {
         );
     }
 
+    private registerKarateTestDistributer() {
+        this.server.tool(
+            "test-distributer-karate",
+            `Distribute Karate tests across parallel machines. User needs to provide sample command (must be entered manually, cannot be inferred)`,
+            {
+                sampleTestRunnerCommand: z.string().describe(
+                    `Please provide sample test-runner command with tags example: mvn test -Dtest=TestRunner -Dkarate.options='@smoke' or gradle test --tests TestRunner -Dkarate.options='@smoke'`
+                ),
+            },
+            async ({ sampleTestRunnerCommand }) => {
+                try {
+                    const yamlcreater: HyperexecuteYaml = new HyperexecuteYaml();
+                    let result = ``;
+
+                    // Ensure framework analyzer is available
+                    if (!this.frameworkSpecObject) {
+                        this.frameworkSpecObject = new FrameworkSpecAnalyzer();
+                    }
+                    // Extract test files safely
+                    const testFiles: string[] = this.frameworkSpecObject.getField("testFiles") ?? [];
+                    const hasValidFeatures = testFiles.length > 0 && testFiles.every(f => f.toLowerCase().endsWith(".feature"));
+                    // Extract package manager safely
+                    const packageManager: string = (this.frameworkSpecObject.getField("packageManager") ?? "").toLowerCase();
+                    let responseText = "";
+
+                    if (!hasValidFeatures) {
+                        responseText = "No valid `.feature` files found. Please ensure your Karate project has `.feature`.";
+                    } else if (!["maven", "gradle"].includes(packageManager)) {
+                        responseText = `Unsupported build tool: ${packageManager || "unknown"}. Supported tools: Maven, Gradle.`;
+                    } else {
+                        const karateDist: MavenTestDistributor = new MavenTestDistributor;
+                        // Run distribution update (safe execution)
+                        if (packageManager.toLowerCase() === 'maven') {
+                            yamlcreater.ensureYamlFile_Karate_Maven();
+                            result = await karateDist.karate_maven_test_distributer(sampleTestRunnerCommand);
+                            responseText = `Test distribution updated. \n\nYAML Update Result:\n${JSON.stringify(result, null, 2)}`
+                        }
+                        if (packageManager.toLowerCase() === 'gradle')
+                            yamlcreater.ensureYamlFile_Karate_Gradle();
+
+
+                    }
+                    return {
+                        content: [{
+                            type: "text",
+                            text: `${responseText}`,
+                        }],
+                    };
+
+                }
+                catch (error: any) {
+                    console.error("Karate Test distribution error:\n", error);
+                    return {
+                        content: [{
+                            type: "text",
+                            text: `Error in distributing the tests.\nReason: ${error.message}\n\nInputs:\n- Sample Runner Command: ${sampleTestRunnerCommand}`,
+                        }],
+                    };
+                }
+            }
+        );
+    }
     // -------- Start Server --------
     public start() {
         const transport = new StdioServerTransport();

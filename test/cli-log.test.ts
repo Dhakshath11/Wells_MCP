@@ -33,6 +33,7 @@ describe("cli-log.test.ts", function () {
         };
 
         console.log(results);
+        console.table(results);
 
         // Example: Add expectations
         expect(results.jobLink).to.be.a("string");

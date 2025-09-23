@@ -32,11 +32,14 @@ function getFileContent(filePath: string): string {
 }
 
 /**
- * Write a string to a file, overwriting if it exists.
+ * Write a string to a file, overwriting if it exists. Also,before writting create the file or folder if it does not exists.
  * @param filePath Path to the file
  * @param doc Content to write
  */
 function writeFile(filePath: string, doc: string) {
+    const dir = path.dirname(filePath);
+    if (!fileExists(dir))
+        fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(filePath, doc, 'utf-8');
 }
 
@@ -128,6 +131,17 @@ function deleteFile(filePath: string): void {
 }
 
 /**
+ * Deletes a specific folder and all its contents if it exists.
+ * @param folderPath Path to the folder to delete
+ */
+function deleteFolder(folderPath: string): void {
+    if (fs.existsSync(folderPath)) {
+        fs.rmSync(folderPath, { recursive: true, force: true });
+    }
+}
+
+
+/**
  * Computes the relative import path from a test file to a setup file.
  * Ensures the path is valid for both Unix and Windows environments.
  * @param testFile Path to the test file
@@ -150,6 +164,7 @@ export {
     findFileAbsolutePath,
     findFileRelativePath,
     deleteFile,
+    deleteFolder,
     getRelativeImport,
     findFileRelativePathFolder
 };

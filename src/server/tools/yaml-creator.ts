@@ -10,7 +10,7 @@
 
 import * as YAML from "yaml";
 import * as fileOps from "../../commons/fileOperations.js";
-import { download_Playwright_hyperexecute_yaml } from "../../resources/download-file.js";
+import { download_karate_gradle_hyperexecute_yaml, download_karate_maven_hyperexecute_yaml, download_Playwright_hyperexecute_yaml } from "../../resources/download-file.js";
 type yaml = YAML.Document.Parsed;
 
 export class HyperexecuteYaml {
@@ -19,17 +19,49 @@ export class HyperexecuteYaml {
     /**
      * Ensures the YAML file exists. Downloads if not present.
      */
-    public async ensureYamlFile(): Promise<void> {
+    public async ensureYamlFile_Playwright(): Promise<void> {
         if (!fileOps.fileExists(this.fileName)) {
             await download_Playwright_hyperexecute_yaml();
         }
     }
 
     /**
-     * Downloads the YAML file.
+     * Ensures the YAML file exists. Downloads if not present.
      */
-    private async downloadYamlFile(): Promise<void> {
+    public async ensureYamlFile_Karate_Maven(): Promise<void> {
+        if (!fileOps.fileExists(this.fileName)) {
+            await download_karate_maven_hyperexecute_yaml();
+        }
+    }
+
+    /**
+     * Ensures the YAML file exists. Downloads if not present.
+     */
+    public async ensureYamlFile_Karate_Gradle(): Promise<void> {
+        if (!fileOps.fileExists(this.fileName)) {
+            await download_karate_gradle_hyperexecute_yaml();
+        }
+    }
+
+    /**
+     * Downloads the Playwright YAML file.
+     */
+    private async downloadYamlFile_Playwright(): Promise<void> {
         await download_Playwright_hyperexecute_yaml();
+    }
+
+    /**
+     * Downloads the Karate YAML file.
+     */
+    private async downloadYamlFile_Karate_Maven(): Promise<void> {
+        await download_karate_maven_hyperexecute_yaml();
+    }
+
+    /**
+     * Downloads the Karate YAML file.
+     */
+    private async downloadYamlFile_Karate_Gradle(): Promise<void> {
+        await download_karate_gradle_hyperexecute_yaml();
     }
 
     /**
@@ -108,16 +140,16 @@ export class HyperexecuteYaml {
     }
 
     /**
-     * Creates or updates the YAML file with project details & runner command.
+     * Creates or updates the YAML file with project details & runner command for Playwright TS/JS Projects.
      */
-    async createYaml(
+    async createYamlForPlaywright(
         projectName: string,
         projectID: string,
         playwrightVersion = "playwright@latest",
         testPath = "tests/page_test.spec.js"
     ): Promise<string> {
         try {
-            await this.downloadYamlFile(); // Always Download the fresh YAML file during creation
+            await this.downloadYamlFile_Playwright(); // Always Download the fresh YAML file during creation
             const doc = this.loadYaml();
 
             this.updateProject(doc, { name: projectName, id: projectID });
@@ -131,13 +163,42 @@ export class HyperexecuteYaml {
     }
 
     /**
+     * Creates or updates the YAML file with project details & runner command for Karate TS/JS Projects.
+     */
+    async createYamlForKarate(
+        projectName: string,
+        projectID: string,
+        buildTool: string,
+    ): Promise<string> {
+        try {
+            if (buildTool.toLowerCase() === "maven") {
+                await this.downloadYamlFile_Karate_Maven(); // Always Download the fresh YAML file during creation
+                const doc = this.loadYaml();
+
+                this.updateProject(doc, { name: projectName, id: projectID });
+                this.updateTestRunnerCommand(doc, "mvn test");
+                return this.saveYaml(doc);
+            } else if (buildTool.toLowerCase() === "gradle") {
+                await this.downloadYamlFile_Karate_Gradle(); // Always Download the fresh YAML file during creation
+                const doc = this.loadYaml();
+
+                this.updateProject(doc, { name: projectName, id: projectID });
+                this.updateTestRunnerCommand(doc, "gradle test");
+                return this.saveYaml(doc);
+            } else {
+                throw new Error(`Unsupported build tool: ${buildTool}`);
+            }
+        } catch (error: any) {
+            throw new Error(`Error creating YAML file: ${error.message}`);
+        }
+    }
+
+    /**
      * Updates a specific YAML command section.
      */
     async updateField(whichCommand: string, value: string): Promise<string> {
         try {
-            await this.ensureYamlFile();
             const doc = this.loadYaml();
-
             switch (whichCommand) {
                 case "TestRunnerCommand":
                     this.updateTestRunnerCommand(doc, value);
