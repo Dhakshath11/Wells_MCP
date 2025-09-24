@@ -11,7 +11,7 @@ import { updateImportPaths } from "../playwright-setup/playwright-lambdatest-set
 import * as fileOps from "../commons/fileOperations.js";
 import * as cliLog from "./tools/cli-log.js";
 import * as playwrightTestDistributer from "../playwright-setup/playwright-test-distributer.js";
-import { MavenTestDistributor } from "../maven/maven-test-distributer.js"
+import { KarateTestDistributor } from "../karate-setup/karate-test-distributer.js";
 
 const execAsync = util.promisify(exec);
 
@@ -528,7 +528,7 @@ export class HyperexecuteServer {
                         switch (testDistributor) {
                             case "specific-test":
                                 const testFiles: Set<string> = new Set(); // To hold unique tests & avoid duplicates ones
-                                values = testDistributorValue.split(" "); // If multiple tests are provided, split them by space 
+                                values = testDistributorValue.split(/[ ,;]+/); // If multiple tests are provided, split them by space, comma, semi-colon 
                                 for (const value of values) {
                                     playwrightTestDistributer.does_TestExists(value).forEach(testFile => testFiles.add(testFile));
                                 }
@@ -537,7 +537,7 @@ export class HyperexecuteServer {
 
                             case "parallel-test":
                                 let testFolders: Set<string> = new Set(); // To hold unique tests & avoid duplicates ones
-                                values = testDistributorValue.split(" "); // If multiple folders are provided, split them by space 
+                                values = testDistributorValue.split(/[ ,;]+/);
                                 for (const value of values) {
                                     testFolders.add(playwrightTestDistributer.does_DirectoryHaveTests(value));
                                 }
@@ -546,7 +546,7 @@ export class HyperexecuteServer {
 
                             case "group-test":
                                 let testGroupFolders: Set<string> = new Set(); // To hold unique tests & avoid duplicates ones
-                                values = testDistributorValue.split(" "); // If multiple folders are provided, split them by space 
+                                values = testDistributorValue.split(/[ ,;]+/); // If multiple tests are provided, split them by space, comma, semi-colon 
                                 for (const value of values) {
                                     testGroupFolders.add(playwrightTestDistributer.does_DirectoryHaveTests(value));
                                 }
@@ -555,7 +555,7 @@ export class HyperexecuteServer {
 
                             case "tags":
                             case "names":
-                                values = testDistributorValue.split(" ");
+                                values = testDistributorValue.split(/[ ,;]+/);
                                 for (const value of values) {
                                     playwrightTestDistributer.does_TestContainTag(value);
                                 }
@@ -597,68 +597,122 @@ export class HyperexecuteServer {
         );
     }
 
+    /**
+     * Note:
+     * 1) Handle Multi-Folder scenario for specific featrure file; Ex-> login.feature can be with QA & Stage env
+     * 2) Handle specific scenario line example: when user pass login.feature:10
+     */
     private registerKarateTestDistributer() {
         this.server.tool(
             "test-distributer-karate",
-            `Distribute Karate tests across parallel machines. User needs to provide sample command (must be entered manually, cannot be inferred)`,
+            `Distribute karate-tests across parallel machines. Supported distribution modes: tags or feature files. (must be entered manually, cannot be inferred)
+             Distributed Inputs are updated into hyperexecute.yaml file by this tool & 'run-tests-on-hyperexecute' tool needs to be called after this tool`,
             {
-                sampleTestRunnerCommand: z.string().describe(
-                    `Please provide sample test-runner command with tags example: mvn test -Dtest=TestRunner -Dkarate.options='@smoke' or gradle test --tests TestRunner -Dkarate.options='@smoke'`
+                testDistributor: z.enum([
+                    "tags",
+                    "feature-files"
+                ])
+                    .transform(val => val.toLowerCase() as typeof val) // normalize casing
+                    .describe(
+                        `Select distribution mode (case-insensitive):
+                   • tags → Run tests with a specific @tags on separate machines.
+                   • feature-files → Run scenarios from feature files on separate machines.`
+                    ),
+
+                testDistributorValue: z.string().describe(
+                    `Additional filter value depending on distribution mode:
+                 • For tags → provide the tag name (e.g. "@smoke").
+                 • For feature-files → provide the specific feature file or folder (e.g. "login.feature", "*.feature","src/test/resource/features" ).
+                   (must be entered manually, cannot be inferred)`
                 ),
             },
-            async ({ sampleTestRunnerCommand }) => {
+            async ({ testDistributor, testDistributorValue }) => {
                 try {
                     const yamlcreater: HyperexecuteYaml = new HyperexecuteYaml();
-                    let result = ``;
+                    let result = ``, responseText = ``, values: string[] = [], testDiscoveryCommand = ``;
 
-                    // Ensure framework analyzer is available
-                    if (!this.frameworkSpecObject) {
-                        this.frameworkSpecObject = new FrameworkSpecAnalyzer();
-                    }
-                    // Extract test files safely
+                    this.frameworkSpecObject ??= new FrameworkSpecAnalyzer();
                     const testFiles: string[] = this.frameworkSpecObject.getField("testFiles") ?? [];
-                    const hasValidFeatures = testFiles.length > 0 && testFiles.every(f => f.toLowerCase().endsWith(".feature"));
-                    // Extract package manager safely
                     const packageManager: string = (this.frameworkSpecObject.getField("packageManager") ?? "").toLowerCase();
-                    let responseText = "";
 
+                    // ✅ Validation checks
+                    const hasValidFeatures = testFiles.length > 0 && testFiles.every(f => f.toLowerCase().endsWith(".feature"));
                     if (!hasValidFeatures) {
-                        responseText = "No valid `.feature` files found. Please ensure your Karate project has `.feature`.";
-                    } else if (!["maven", "gradle"].includes(packageManager)) {
-                        responseText = `Unsupported build tool: ${packageManager || "unknown"}. Supported tools: Maven, Gradle.`;
-                    } else {
-                        const karateDist: MavenTestDistributor = new MavenTestDistributor;
-                        // Run distribution update (safe execution)
-                        if (packageManager.toLowerCase() === 'maven') {
-                            yamlcreater.ensureYamlFile_Karate_Maven();
-                            result = await karateDist.karate_maven_test_distributer(sampleTestRunnerCommand);
-                            responseText = `Test distribution updated. \n\nYAML Update Result:\n${JSON.stringify(result, null, 2)}`
-                        }
-                        if (packageManager.toLowerCase() === 'gradle')
-                            yamlcreater.ensureYamlFile_Karate_Gradle();
-
-
+                        return {
+                            content: [{ type: "text", text: "No valid `.feature` files found. Please ensure your Karate project has `.feature` files." }],
+                        };
                     }
-                    return {
-                        content: [{
-                            type: "text",
-                            text: `${responseText}`,
-                        }],
+
+                    if (!["maven", "gradle"].includes(packageManager)) {
+                        return {
+                            content: [{ type: "text", text: `Unsupported build tool: ${packageManager || "unknown"}. Supported tools: Maven, Gradle.` }],
+                        };
+                    }
+
+                    // ✅ Distributor instance
+                    const distributer = new KarateTestDistributor();
+
+                    // ✅ Normalize distributor values (tags/features)
+                    const parseDistributorValues = (input: string): string[] =>
+                        (input || "").split(/[ ,;]+/).filter(Boolean);
+
+                    // ✅ Apply distribution logic (tags or feature-files)
+                    const applyDistribution = async (type: string, values: string[]) => {
+                        switch (type) {
+                            case "tags":
+                                values.forEach(tag => distributer.hasFeatureWithTag(tag));
+                                return distributer.testDiscoverCommand_forTags(values);
+                            case "feature-files":
+                                values.forEach(f => distributer.hasFeatureFileOrFolder(f));
+                                return distributer.testDiscoverCommand_forFileOrFolder(values);
+                            default:
+                                return "echo test";
+                        }
                     };
 
-                }
-                catch (error: any) {
+                    // ✅ Framework-specific setup
+                    if (packageManager === "maven") {
+                        yamlcreater.ensureYamlFile_Karate_Maven();
+                        values = parseDistributorValues(testDistributorValue);
+                        testDiscoveryCommand = await applyDistribution(testDistributor, values);
+                        result = await yamlcreater.updateField("TestDiscoveryCommand", testDiscoveryCommand);
+                        result = await yamlcreater.updateField("TestRunnerCommand", distributer.testRunnerCommand_karateMaven());
+                    } else {
+                        yamlcreater.ensureYamlFile_Karate_Gradle();
+                        values = parseDistributorValues(testDistributorValue);
+                        testDiscoveryCommand = await applyDistribution(testDistributor, values);
+                        result = await yamlcreater.updateField("TestDiscoveryCommand", testDiscoveryCommand);
+                        result = await yamlcreater.updateField("TestRunnerCommand", distributer.testRunnerCommand_karateMaven());
+                    }
+
+                    // ✅ Final response
+                    responseText = `Test distribution updated.\n\nRunner Command:\n\`${testDiscoveryCommand}\`\n\nYAML Update Result:\n${JSON.stringify(result, null, 2)}`;
+
+                    return { content: [{ type: "text", text: responseText }] };
+
+                } catch (error: any) {
                     console.error("Karate Test distribution error:\n", error);
                     return {
                         content: [{
                             type: "text",
-                            text: `Error in distributing the tests.\nReason: ${error.message}\n\nInputs:\n- Sample Runner Command: ${sampleTestRunnerCommand}`,
+                            text: `Error in distributing the tests.\nReason: ${error.message}\n\nInputs:\n- Distributor: ${testDistributor}\n- Value: ${testDistributorValue}`,
                         }],
                     };
                 }
             }
         );
     }
+
+    // -------- Return Statement -----
+    private returnStatement(message: string): { content: { type: string; text: string }[] } {
+        return {
+            content: [{
+                type: "text",
+                text: message
+            }]
+        };
+    }
+    
     // -------- Start Server --------
     public start() {
         const transport = new StdioServerTransport();

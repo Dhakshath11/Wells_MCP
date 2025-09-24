@@ -1,13 +1,31 @@
 
 import * as fileOps from '../commons/fileOperations.js';
 import * as path from "path";
-import * as maven_setup from '../maven/maven-setup.js'
-import * as gradle_setup from '../gradle/gradle-setup.js'
+import * as maven_setup from '../commons/maven/maven-setup.js'
+import * as gradle_setup from '../commons/gradle/gradle-setup.js'
+import * as cmd from "../commons/cmdOperations.js"
 
 export class KarateTestDistributor {
+
+    public hasFeatureWithTag(tag: string): boolean {
+        const result = cmd.getFeatureFilesForTags(tag)?.trim();
+        if (!result) {
+            throw new Error(`No feature file found with tag: ${tag}`);
+        }
+        return true;
+    }
+
     public testDiscoverCommand_forTags(tags: string[]): string {
         const testDiscoveryCommand = `./snooper --featureFilePaths=. --frameWork=java --specificTags=${tags.join(' ')}`;
         return testDiscoveryCommand;
+    }
+
+    public hasFeatureFileOrFolder(ff: string): boolean {
+        const result = cmd.findCommand(ff)?.trim();
+        if (!result) {
+            throw new Error(`No feature file found within : ${ff}`);
+        }
+        return true;
     }
 
     public testDiscoverCommand_forFileOrFolder(INPUTS: string[]): string {

@@ -11,7 +11,6 @@
 
 import { KarateTestDistributor } from "../src/karate-setup/karate-test-distributer.js";
 import { HyperexecuteYaml } from "../src/server/tools/yaml-creator.js";
-import * as cmd from "../src/commons/cmdOperations.js"
 import * as fileOps from '../src/commons/fileOperations.js';
 
 const yamlcreater: HyperexecuteYaml = new HyperexecuteYaml();
@@ -222,12 +221,10 @@ describe("karate-maven-test-distributer.ts", () => {
 
         await yaml();
         const tags = ['@DeleteRequest', '@UpdateUser'];
-        for (const tag of tags) {
-            if (!cmd.getFeatureFilesForTags(tag)) {
-                throw new Error(`No feature file found which has Tag: ${tag}`);
-            }
-        }
         const distributer = new KarateTestDistributor();
+        for (const tag of tags) {
+            distributer.hasFeatureWithTag(tag);
+        }
         result = await yamlcreater.updateField("TestDiscoveryCommand", distributer.testDiscoverCommand_forTags(tags));
         result = await yamlcreater.updateField("TestRunnerCommand", distributer.testRunnerCommand_karateMaven());
         console.log(result);
@@ -246,13 +243,11 @@ describe("karate-maven-test-distributer.ts", () => {
         createMockLogFile("pom.xml", pomXmlSample);
 
         await yaml();
-        const folders = ['src/commons','src/maven'];
-        for (const folder of folders) {
-            if (!cmd.findCommand(folder)) {
-                throw new Error(`No feature file found within : ${folder}`);
-            }
-        }
+        const folders = ['src/commons', 'src/maven'];
         const distributer = new KarateTestDistributor();
+        for (const folder of folders) {
+            distributer.hasFeatureFileOrFolder(folder);
+        }
         result = await yamlcreater.updateField("TestDiscoveryCommand", distributer.testDiscoverCommand_forFileOrFolder(folders));
         result = await yamlcreater.updateField("TestRunnerCommand", distributer.testRunnerCommand_karateMaven());
         console.log(result);
@@ -272,12 +267,10 @@ describe("karate-maven-test-distributer.ts", () => {
 
         await yaml();
         const folders = ['TestFeature.feature'];
-        for (const folder of folders) {
-            if (!cmd.findCommand(folder)) {
-                throw new Error(`No feature file found within : ${folder}`);
-            }
-        }
         const distributer = new KarateTestDistributor();
+        for (const folder of folders) {
+            distributer.hasFeatureFileOrFolder(folder);
+        }
         result = await yamlcreater.updateField("TestDiscoveryCommand", distributer.testDiscoverCommand_forFileOrFolder(folders));
         result = await yamlcreater.updateField("TestRunnerCommand", distributer.testRunnerCommand_karateMaven());
         console.log(result);
@@ -296,13 +289,11 @@ describe("karate-maven-test-distributer.ts", () => {
         createMockLogFile("pom.xml", pomXmlSample);
 
         await yaml();
-        const folders = ['*.feature','./TestFeature.feature'];
-        for (const folder of folders) {
-            if (!cmd.findCommand(folder)) {
-                throw new Error(`No feature file found within : ${folder}`);
-            }
-        }
+        const folders = ['*.feature', './TestFeature.feature'];
         const distributer = new KarateTestDistributor();
+        for (const folder of folders) {
+            distributer.hasFeatureFileOrFolder(folder);
+        }
         result = await yamlcreater.updateField("TestDiscoveryCommand", distributer.testDiscoverCommand_forFileOrFolder(folders));
         result = await yamlcreater.updateField("TestRunnerCommand", distributer.testRunnerCommand_karateMaven());
         console.log(result);
@@ -323,12 +314,10 @@ describe("karate-gradle-test-distributer.ts", () => {
 
         await yaml();
         const tags = ['@DeleteRequest', '@UpdateUser'];
-        for (const tag of tags) {
-            if (!cmd.getFeatureFilesForTags(tag)) {
-                throw new Error(`No feature file found which has Tag: ${tag}`);
-            }
-        }
         const distributer = new KarateTestDistributor();
+        for (const tag of tags) {
+            distributer.hasFeatureWithTag(tag);
+        }
         result = await yamlcreater.updateField("TestDiscoveryCommand", distributer.testDiscoverCommand_forTags(tags));
         result = await yamlcreater.updateField("TestRunnerCommand", distributer.testRunnerCommand_karateGradle());
         console.log(result);

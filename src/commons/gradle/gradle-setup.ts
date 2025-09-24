@@ -1,4 +1,4 @@
-import * as fileOps from '../commons/fileOperations.js';
+import * as fileOps from '../fileOperations.js';
 
 const include_GradleDependency = (dependencyToAdd: string): void => {
     const gradleFile = fileOps.findFileRelativePath('.', 'build.gradle');
