@@ -68,7 +68,36 @@ export class HyperexecuteServer {
 
     // -------- Tool Definitions --------
 
+    /**
+     * Helper to format a plain text response for MCP server tools.
+     *
+     * @param message The message string to be returned to the client.
+     * @returns An object with a `content` property containing an array of text response objects,
+     *          in the format required by the MCP server tool callback.
+     *          Each object in the array has `type: "text"` and a `text` property.
+     *
+     * Example return value:
+     * {
+     *   content: [
+     *     { type: "text", text: "Your message here" }
+     *   ]
+     * }
+     */
+    private rt(message: string): { content: { type: "text"; text: string }[] } {
+        return {
+            content: [{
+                type: "text",
+                text: message
+            }]
+        };
+    }
+
     private registerCheckCliPresent() {
+        /**
+         * Registers the tool to check if the hyperexecute CLI exists in the framework repo.
+         * Should be called before running analyze or downloading CLI.
+         * Returns a text response indicating presence or absence of the CLI.
+         */
         this.server.tool(
             "check-hyperexecute-cli-present",
             "Check if hyperexecute CLI exists in the framework repo. Should be called before running analyze or downloading CLI.",
@@ -81,31 +110,26 @@ export class HyperexecuteServer {
                     if (stderr) {
                         message = `stderr while checking for hyperexecute CLI: ${stderr}`;
                     } else if (stdout.trim()) {
-                        message = `Yes, hyperexecute CLI is present. Suspected files:\n${stdout}`;
+                        message = `Yes, hyperexecute CLI is present. Suspected files: ${stdout}`;
                     } else {
                         message = `Oops, hyperexecute CLI is not present in the framework repo. Please download it.`;
                     }
 
-                    return {
-                        content: [{
-                            type: "text",
-                            text: message
-                        }]
-                    };
+                    return this.rt(message);
                 } catch (error: any) {
                     console.error(error.message); // Log the error for debugging - you can see it in MCP inpsector bottom-left
-                    return {
-                        content: [{
-                            type: "text",
-                            text: `Error occurred while checking for hyperexecute CLI: ${error.message}`
-                        }]
-                    };
+                    return this.rt(`Error occurred while checking for hyperexecute CLI: ${error.message}`);
                 }
             }
         );
     }
 
     private registerGetCli() {
+        /**
+         * Registers the tool to download the hyperexecute CLI and check if credentials are set.
+         * Should only be called if 'check-hyperexecute-cli-present' reports missing CLI.
+         * Returns a text response about download status and credential presence.
+         */
         this.server.tool(
             "get-hyperexecute-cli",
             `Download hyperexecute CLI & check if Hyperexecute Credentials are set in environment variables. 
@@ -114,85 +138,61 @@ export class HyperexecuteServer {
             {},
             async () => {
                 try {
-                    // Curl command will always return stderr, not stdout. Hence not checking stdout.
                     const { stderr } = await execAsync(
                         "curl -s -O https://downloads.lambdatest.com/hyperexecute/darwin/hyperexecute"
                     );
-
                     const isCredSet = this.username != null && this.accessKey != null;
-                    return {
-                        content: [{
-                            type: "text",
-                            text: `Downloaded the file ${stderr} & Hyperexecute Credentials are ${isCredSet ? `set` : 'NOT set'}`
-                        }]
-                    };
-
+                    return this.rt(`Downloaded the file ${stderr} & Hyperexecute Credentials are ${isCredSet ? `set` : 'NOT set'}`);
                 } catch (error: any) {
-                    console.error(error.message); // Log the error for debugging - you can see it in MCP inpsector bottom-left
-                    return {
-                        content: [{
-                            type: "text",
-                            text: `Error in downloading, here is Response: ${error.message}`
-                        }]
-                    };
+                    console.error(error.message);
+                    return this.rt(`Error in downloading, here is Response: ${error.message}`);
                 }
             }
         );
     }
 
     private registerRunAnalyzer() {
+        /**
+         * Registers the tool to run the hyperexecute analyzer and return the framework spec.
+         * Requires CLI. If CLI not present, first call 'get-hyperexecute-cli'.
+         * Returns a text response with the framework spec or error details.
+         */
         this.server.tool(
             "run-hyperexecute-analyzer",
             "Run hyperexecute analyzer, returns framework spec. Requires CLI. If CLI not present, first call 'get-hyperexecute-cli'.",
             {},
             async () => {
                 try {
-                    // Giving permission to the hyperexecute file
                     const { stderr } = await execAsync(
                         "chmod 777 hyperexecute | ls -la hyperexecute "
                     );
                     if (stderr) {
-                        return {
-                            content: [{
-                                type: "text",
-                                text: `Error while running chmod command: ${stderr}`
-                            }]
-                        };
+                        return this.rt(`Error while running chmod command: ${stderr}`);
                     } else {
                         const { stderr } = await execAsync(
                             "./hyperexecute analyze"
                         );
                         if (stderr) {
-                            return {
-                                content: [{
-                                    type: "text",
-                                    text: `Error while running hyperexecute command: ${stderr}`
-                                }]
-                            };
+                            return this.rt(`Error while running hyperexecute command: ${stderr}`);
                         }
-                        this.frameworkSpecObject = new FrameworkSpecAnalyzer(); // Object is stored globally
+                        this.frameworkSpecObject = new FrameworkSpecAnalyzer();
                         const frameworkSpec: AnalysisOutput = this.frameworkSpecObject.parseAnalysisLog();
-                        return {
-                            content: [{
-                                type: "text",
-                                text: JSON.stringify(frameworkSpec, null, 2)
-                            }]
-                        };
+                        return this.rt(JSON.stringify(frameworkSpec, null, 2));
                     }
                 } catch (error: any) {
-                    console.error(error.message); // Log the error for debugging - you can see it in MCP inpsector bottom-left
-                    return {
-                        content: [{
-                            type: "text",
-                            text: `Error trying to run hyperexecute analyze: ${error.message}`
-                        }]
-                    };
+                    console.error(error.message);
+                    return this.rt(`Error trying to run hyperexecute analyze: ${error.message}`);
                 }
             }
         );
     }
 
     private registerMakeCompatible() {
+        /**
+         * Registers the tool to make the framework compatible with Hyperexecute CLI.
+         * Updates Playwright config and test imports if applicable.
+         * Returns a text response about compatibility actions taken.
+         */
         this.server.tool(
             "make-hyperexecute-compatible",
             `Make the framework compatible with Hyperexecute CLI.`,
@@ -209,30 +209,21 @@ export class HyperexecuteServer {
                         playwrightConfigSetup();
                         await updateImportPaths(testFiles, language);
                     }
-                    return {
-                        content: [
-                            {
-                                type: "text",
-                                text: `Made the framework compatible with Hyperexecute CLI by updating playwright.config.js and replacing imports in test files with lambdatest-test.`,
-                            },
-                        ],
-                    };
+                    return this.rt(`Made the framework compatible with Hyperexecute CLI by updating playwright.config.js and replacing imports in test files with lambdatest-test.`);
                 } catch (error: any) {
-                    console.error(error.message); // Log the error for debugging - you can see it in MCP inpsector bottom-left
-                    return {
-                        content: [
-                            {
-                                type: "text",
-                                text: `Error in making the framework compatible with Hyperexecute CLI: ${error.message}`,
-                            },
-                        ],
-                    };
+                    console.error(error.message);
+                    return this.rt(`Error in making the framework compatible with Hyperexecute CLI: ${error.message}`);
                 }
             }
         );
     }
 
     private registerCreateYaml() {
+        /**
+         * Registers the tool to create a hyperexecute YAML file for the framework.
+         * Prompts for project name and ID. Handles Playwright and Karate frameworks.
+         * Returns a text response with YAML creation result or error details.
+         */
         this.server.tool(
             "create-hyperexecute-yaml-file",
             `Create a hyperexecute yaml file for the this framework prompting user to give project name & ID (must be entered manually, cannot be inferred)`,
@@ -260,30 +251,21 @@ export class HyperexecuteServer {
                     else if (testFrameworks.some(fw => fw.includes("karate"))) {
                         result = await yamlcreater.createYamlForKarate(projectName, projectID, packageManager);
                     }
-                    return {
-                        content: [
-                            {
-                                type: "text",
-                                text: `Created hyperexecute.yaml file\n ${JSON.stringify(result, null, 2)}`
-                            },
-                        ],
-                    };
+                    return this.rt(`Created hyperexecute.yaml file\n ${JSON.stringify(result, null, 2)}`);
                 } catch (error: any) {
-                    console.error(error.message); // Log the error for debugging - you can see it in MCP inpsector bottom-left
-                    return {
-                        content: [
-                            {
-                                type: "text",
-                                text: `Error in creating hyperexecute.yaml file: ${error.message}`,
-                            },
-                        ],
-                    };
+                    console.error(error.message);
+                    return this.rt(`Error in creating hyperexecute.yaml file: ${error.message}`);
                 }
             }
         );
     }
 
     private registerSetupCredentials() {
+        /**
+         * Registers the tool to collect LambdaTest credentials if not set by environment variables.
+         * Prompts for username and access key. Updates internal state.
+         * Returns a text response about credential configuration status.
+         */
         this.server.tool(
             "setup-lambdatest-credentials",
             "Collect LambdaTest credentials if NOT set by environment variables (must be entered manually, cannot be inferred).",
@@ -294,31 +276,28 @@ export class HyperexecuteServer {
                     .describe("Provide your LambdaTest access key Manually"),
             },
             async ({ LT_USERNAME, LT_ACCESS_KEY }) => {
-                // Override global vars only if user provides
                 if (LT_USERNAME) this.username = LT_USERNAME;
                 if (LT_ACCESS_KEY) this.accessKey = LT_ACCESS_KEY;
-                return {
-                    content: [
-                        {
-                            type: "text",
-                            text: (!this.username || !this.accessKey)
-                                ? `Please provide LambdaTest credentials to run tests on HyperExecute;
-               Can be found in the link: https://hyperexecute.lambdatest.com/hyperexecute`
-                                : `LambdaTest credentials configured successfully for user: ${this.username}`,
-                        },
-                    ],
-                };
+                const msg = (!this.username || !this.accessKey)
+                    ? `Please provide LambdaTest credentials to run tests on HyperExecute.
+                    Can be found in the link: https://hyperexecute.lambdatest.com/hyperexecute`
+                    : `LambdaTest credentials configured successfully for user: ${this.username}`;
+                return this.rt(msg);
             }
         );
     }
 
     private registerRunTests() {
+        /**
+         * Registers the tool to run tests on Hyperexecute LambdaTest platform.
+         * Requires CLI, credentials, YAML file, and compatible framework.
+         * Returns a text response about job trigger status or errors.
+         */
         this.server.tool(
             "run-tests-on-hyperexecute",
             `Run the tests present in the framework on Hyperexecute lambdatest test tool platform, requires hyperexecute cli, lambdatest-credentials, hyperexecute yaml file and framework compatible with Hyperexecute CLI.`,
             {},
             async () => {
-                // Make control variables false before running the test
                 [this.jobStarted, this.noError, this.uploadStarted, this.uploadDone, this.serverConnected, this.jobLink, this.jobDone] = Array(7).fill(false);
                 try {
                     let lastCliOutput = "";
@@ -330,26 +309,21 @@ export class HyperexecuteServer {
                     this.jobStarted = await cliLog.isJobTriggered();
                     const message = this.jobStarted ? "CLI Job triggered successfully" : `Failed to trigger CLI Job. CLI said: ${lastCliOutput || "no output yet"}`;
 
-                    return {
-                        content: [{
-                            type: "text",
-                            text: message
-                        }]
-                    };
+                    return this.rt(message);
                 } catch (error: any) {
-                    console.error('Error Message: \n' + error.message); // Log the error for debugging - you can see it in MCP inpsector bottom-left
-                    return {
-                        content: [{
-                            type: "text",
-                            text: `Error running test in hyperexecute CLI: ${error.message}`
-                        }]
-                    };
+                    console.error('Error Message: \n' + error.message);
+                    return this.rt(`Error running test in hyperexecute CLI: ${error.message}`);
                 }
             }
         );
     }
 
     private registerAnalyzeCliRun() {
+        /**
+         * Registers the tool to analyze hyperexecute CLI run and extract the job link.
+         * Checks CLI logs for job progression and errors. Returns job link or status updates.
+         * Returns a text response with job link, status, or error details.
+         */
         this.server.tool(
             "analyze-hyperexecute-cli-run",
             `Post test runs in hyperexecute CLI, analyze the hyperexecute-cli.logs file to get the Job Link. 
@@ -366,12 +340,7 @@ export class HyperexecuteServer {
                         } else {
                             throw new Error("Tests not started - Please run the tests in hyperexecute CLI.");
                         }
-                        return {
-                            content: [{
-                                type: "text",
-                                text: message
-                            }]
-                        };
+                        return this.rt(message);
                     }
 
                     if (this.jobStarted && !this.noError) {
@@ -396,12 +365,7 @@ export class HyperexecuteServer {
                                 message = "None of the errors are found, can proceed looking for the job link in cli logs.";
                                 this.noError = true;
                         }
-                        return {
-                            content: [{
-                                type: "text",
-                                text: message
-                            }]
-                        };
+                        return this.rt(message);
                     }
 
                     // ----> Steps of job progression <-----
@@ -434,43 +398,39 @@ export class HyperexecuteServer {
                             if (step.condition()) {
                                 const result = await step.check();
                                 if (result) {
-                                    // If job link step → fetch dynamic link
                                     if (step.onSuccess) {
                                         this.jobExecutionLink = await step.onSuccess();
-                                        return { content: [{ type: "text", text: step.message(this.jobExecutionLink) }] };
+                                        return this.rt(step.message(this.jobExecutionLink));
                                     }
-                                    return { content: [{ type: "text", text: step.message }] };
+                                    return this.rt(step.message as string);
                                 }
                             }
                         }
                     }
 
-                    // Deadlock prevention → job ended but no jobLink
                     if (!this.jobLink) {
                         this.jobDone = await cliLog.isJobTrackStopped();
                         if (this.jobDone) {
                             throw new Error("Job link is not generated, but test has been terminated.");
                         }
-                        // Still running but no link yet
-                        return { content: [{ type: "text", text: "Job is still running, waiting for job link..." }] };
+                        return this.rt("Job is still running, waiting for job link...");
                     }
 
-                    // Job link already found
-                    return { content: [{ type: "text", text: `Job link is generated. Here is the job link: ${this.jobExecutionLink}` }] };
+                    return this.rt(`Job link is generated. Here is the job link: ${this.jobExecutionLink}`);
 
                 } catch (error: any) {
                     console.error(error.message);
-                    return {
-                        content: [{
-                            type: "text",
-                            text: `Error getting the job link: ${error.message}. \n Exiting the user request. Kindly analyze your project manually & try again later!`
-                        }]
-                    };
+                    return this.rt(`Error getting the job link: ${error.message}. \n Exiting the user request. Kindly analyze your project manually & try again later!`);
                 }
             });
     }
 
     private registerPlaywrightTestDistributer() {
+        /**
+         * Registers the tool to distribute Playwright tests across parallel machines.
+         * Supports distribution by specific test, parallel test, group test, tags, or names.
+         * Updates hyperexecute.yaml with distribution commands. Returns status or error as text.
+         */
         this.server.tool(
             "test-distributer-playwright",
             `Distribute Playwright tests across parallel machines. Supported distribution modes: specific test, individual tests, test groups, tags, or test names.
@@ -484,7 +444,7 @@ export class HyperexecuteServer {
                     "tags",
                     "names"
                 ])
-                    .transform(val => val.toLowerCase() as typeof val) // normalize casing
+                    .transform(val => val.toLowerCase() as typeof val)
                     .describe(
                         `Select distribution mode (case-insensitive):
                    • specific-test → Run a specific test on a separate machine.
@@ -507,28 +467,21 @@ export class HyperexecuteServer {
                 try {
                     const yamlcreater: HyperexecuteYaml = new HyperexecuteYaml();
 
-                    // Ensure framework analyzer is available
                     if (!this.frameworkSpecObject) {
                         this.frameworkSpecObject = new FrameworkSpecAnalyzer();
                     }
                     const testFiles: string[] = this.frameworkSpecObject.getField("testFiles");
                     if (testFiles.length <= 0) {
-                        return {
-                            content: [{
-                                type: "text",
-                                text: "No test files found in the framework. Please add test files to the framework and try again."
-                            }]
-                        }
+                        return this.rt("No test files found in the framework. Please add test files to the framework and try again.");
                     }
                     const packageManager: string = this.frameworkSpecObject.getField("packageManager") || "";
                     let command = "", values: string[] = [];
-                    // Only support Node.js package managers for now
                     if (["npm", "yarn", "pnpm"].includes(packageManager)) {
                         await yamlcreater.ensureYamlFile_Playwright();
                         switch (testDistributor) {
                             case "specific-test":
-                                const testFiles: Set<string> = new Set(); // To hold unique tests & avoid duplicates ones
-                                values = testDistributorValue.split(/[ ,;]+/); // If multiple tests are provided, split them by space, comma, semi-colon 
+                                const testFiles: Set<string> = new Set();
+                                values = testDistributorValue.split(/[ ,;]+/);
                                 for (const value of values) {
                                     playwrightTestDistributer.does_TestExists(value).forEach(testFile => testFiles.add(testFile));
                                 }
@@ -536,7 +489,7 @@ export class HyperexecuteServer {
                                 break;
 
                             case "parallel-test":
-                                let testFolders: Set<string> = new Set(); // To hold unique tests & avoid duplicates ones
+                                let testFolders: Set<string> = new Set();
                                 values = testDistributorValue.split(/[ ,;]+/);
                                 for (const value of values) {
                                     testFolders.add(playwrightTestDistributer.does_DirectoryHaveTests(value));
@@ -545,8 +498,8 @@ export class HyperexecuteServer {
                                 break;
 
                             case "group-test":
-                                let testGroupFolders: Set<string> = new Set(); // To hold unique tests & avoid duplicates ones
-                                values = testDistributorValue.split(/[ ,;]+/); // If multiple tests are provided, split them by space, comma, semi-colon 
+                                let testGroupFolders: Set<string> = new Set();
+                                values = testDistributorValue.split(/[ ,;]+/);
                                 for (const value of values) {
                                     testGroupFolders.add(playwrightTestDistributer.does_DirectoryHaveTests(value));
                                 }
@@ -563,35 +516,19 @@ export class HyperexecuteServer {
                                 break;
 
                             default:
-                                command = "echo test"; // Fallback default - No Discovery
+                                command = "echo test";
                         }
                     } else {
-                        return {
-                            content: [{
-                                type: "text",
-                                text: `Unsupported package manager "${packageManager}". Currently supported: npm, yarn, pnpm.`,
-                            }],
-                        };
+                        return this.rt(`Unsupported package manager "${packageManager}". Currently supported: npm, yarn, pnpm.`);
                     }
 
-                    // Update YAML with the selected command
                     let result = await yamlcreater.updateField("TestDiscoveryCommand", command);
                     result = await yamlcreater.updateField("TestRunnerCommand", "npx playwright test $test");
 
-                    return {
-                        content: [{
-                            type: "text",
-                            text: `Test distribution updated.\n\nRunner Command:\n\`${command}\`\n\nYAML Update Result:\n${JSON.stringify(result, null, 2)}`,
-                        }],
-                    };
+                    return this.rt(`Test distribution updated.\n\nRunner Command:\n\`${command}\`\n\nYAML Update Result:\n${JSON.stringify(result, null, 2)}`);
                 } catch (error: any) {
                     console.error("Playwright Test distribution error:\n", error);
-                    return {
-                        content: [{
-                            type: "text",
-                            text: `Error in distributing the tests.\nReason: ${error.message}\n\nInputs:\n- Distributor: ${testDistributor}\n- Value: ${testDistributorValue}`,
-                        }],
-                    };
+                    return this.rt(`Error in distributing the tests.\nReason: ${error.message}\n\nInputs:\n- Distributor: ${testDistributor}\n- Value: ${testDistributorValue}`);
                 }
             }
         );
@@ -603,6 +540,11 @@ export class HyperexecuteServer {
      * 2) Handle specific scenario line example: when user pass login.feature:10
      */
     private registerKarateTestDistributer() {
+        /**
+         * Registers the tool to distribute Karate tests across parallel machines.
+         * Supports distribution by tags or feature files. Updates hyperexecute.yaml accordingly.
+         * Returns a text response with distribution status or error details.
+         */
         this.server.tool(
             "test-distributer-karate",
             `Distribute karate-tests across parallel machines. Supported distribution modes: tags or feature files. (must be entered manually, cannot be inferred)
@@ -612,7 +554,7 @@ export class HyperexecuteServer {
                     "tags",
                     "feature-files"
                 ])
-                    .transform(val => val.toLowerCase() as typeof val) // normalize casing
+                    .transform(val => val.toLowerCase() as typeof val)
                     .describe(
                         `Select distribution mode (case-insensitive):
                    • tags → Run tests with a specific @tags on separate machines.
@@ -635,28 +577,20 @@ export class HyperexecuteServer {
                     const testFiles: string[] = this.frameworkSpecObject.getField("testFiles") ?? [];
                     const packageManager: string = (this.frameworkSpecObject.getField("packageManager") ?? "").toLowerCase();
 
-                    // ✅ Validation checks
                     const hasValidFeatures = testFiles.length > 0 && testFiles.every(f => f.toLowerCase().endsWith(".feature"));
                     if (!hasValidFeatures) {
-                        return {
-                            content: [{ type: "text", text: "No valid `.feature` files found. Please ensure your Karate project has `.feature` files." }],
-                        };
+                        return this.rt("No valid `.feature` files found. Please ensure your Karate project has `.feature` files.");
                     }
 
                     if (!["maven", "gradle"].includes(packageManager)) {
-                        return {
-                            content: [{ type: "text", text: `Unsupported build tool: ${packageManager || "unknown"}. Supported tools: Maven, Gradle.` }],
-                        };
+                        return this.rt(`Unsupported build tool: ${packageManager || "unknown"}. Supported tools: Maven, Gradle.`);
                     }
 
-                    // ✅ Distributor instance
                     const distributer = new KarateTestDistributor();
 
-                    // ✅ Normalize distributor values (tags/features)
                     const parseDistributorValues = (input: string): string[] =>
                         (input || "").split(/[ ,;]+/).filter(Boolean);
 
-                    // ✅ Apply distribution logic (tags or feature-files)
                     const applyDistribution = async (type: string, values: string[]) => {
                         switch (type) {
                             case "tags":
@@ -670,7 +604,6 @@ export class HyperexecuteServer {
                         }
                     };
 
-                    // ✅ Framework-specific setup
                     if (packageManager === "maven") {
                         yamlcreater.ensureYamlFile_Karate_Maven();
                         values = parseDistributorValues(testDistributorValue);
@@ -685,36 +618,23 @@ export class HyperexecuteServer {
                         result = await yamlcreater.updateField("TestRunnerCommand", distributer.testRunnerCommand_karateMaven());
                     }
 
-                    // ✅ Final response
                     responseText = `Test distribution updated.\n\nRunner Command:\n\`${testDiscoveryCommand}\`\n\nYAML Update Result:\n${JSON.stringify(result, null, 2)}`;
 
-                    return { content: [{ type: "text", text: responseText }] };
+                    return this.rt(responseText);
 
                 } catch (error: any) {
                     console.error("Karate Test distribution error:\n", error);
-                    return {
-                        content: [{
-                            type: "text",
-                            text: `Error in distributing the tests.\nReason: ${error.message}\n\nInputs:\n- Distributor: ${testDistributor}\n- Value: ${testDistributorValue}`,
-                        }],
-                    };
+                    return this.rt(`Error in distributing the tests.\nReason: ${error.message}\n\nInputs:\n- Distributor: ${testDistributor}\n- Value: ${testDistributorValue}`);
                 }
             }
         );
     }
-
-    // -------- Return Statement -----
-    private returnStatement(message: string): { content: { type: string; text: string }[] } {
-        return {
-            content: [{
-                type: "text",
-                text: message
-            }]
-        };
-    }
-    
     // -------- Start Server --------
     public start() {
+        /**
+         * Starts the Hyperexecute MCP server using stdio transport.
+         * Call this method to begin listening for MCP tool requests.
+         */
         const transport = new StdioServerTransport();
         this.server.connect(transport);
     }

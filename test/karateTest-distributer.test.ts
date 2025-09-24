@@ -243,7 +243,7 @@ describe("karate-maven-test-distributer.ts", () => {
         createMockLogFile("pom.xml", pomXmlSample);
 
         await yaml();
-        const folders = ['src/commons', 'src/maven'];
+        const folders = ['src/commons', 'src/karate-setup'];
         const distributer = new KarateTestDistributor();
         for (const folder of folders) {
             distributer.hasFeatureFileOrFolder(folder);
