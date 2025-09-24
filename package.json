@@ -17,7 +17,7 @@
     "test_import_update": "npx tsx node_modules/.bin/mocha test/import-update.test.ts",
     "test_cli_log": "npx tsx node_modules/.bin/mocha test/cli-log.test.ts",
     "test_playwrightTest_distributer": "npx tsx node_modules/.bin/mocha test/playwrightTest-distributer.test.ts",
-    "test_karateMavenTest_distributer": "npx tsx node_modules/.bin/mocha test/karateMavenTest-distributer.test.ts"
+    "test_karateTest_distributer": "npx tsx node_modules/.bin/mocha test/karateTest-distributer.test.ts"
   },
   "bin": {
     "hyper-mcp-server": "./dist/main.js"

@@ -9,7 +9,7 @@
  * Covers distribution by test name, directory, group, tag, and updates YAML configuration accordingly.
  */
 
-import { MavenTestDistributor } from "../src/maven/maven-test-distributer.js";
+import { KarateTestDistributor } from "../src/karate-setup/karate-test-distributer.js";
 import { HyperexecuteYaml } from "../src/server/tools/yaml-creator.js";
 import * as cmd from "../src/commons/cmdOperations.js"
 import * as fileOps from '../src/commons/fileOperations.js';
@@ -214,8 +214,9 @@ const createMockLogFile = (name: string, content: string) => {
     fileOps.writeFile(name, content);
 };
 
+// -------- MAVEN PROJECT --------
 describe("karate-maven-test-distributer.ts", () => {
-    it("Distribute the karate test for the tags @DeleteRequest @UpdateUser", async () => {
+    it("Distribute the karate test for the tags @DeleteRequest @UpdateUser for MAVEN PROJECT", async () => {
         createMockLogFile("TestFeature.feature", featureFileContent);
         createMockLogFile("pom.xml", pomXmlSample);
 
@@ -226,13 +227,114 @@ describe("karate-maven-test-distributer.ts", () => {
                 throw new Error(`No feature file found which has Tag: ${tag}`);
             }
         }
-        const distributer = new MavenTestDistributor();
-        result = await yamlcreater.updateField("TestDiscoveryCommand", distributer.testDiscoverCommand_karate(tags));
+        const distributer = new KarateTestDistributor();
+        result = await yamlcreater.updateField("TestDiscoveryCommand", distributer.testDiscoverCommand_forTags(tags));
         result = await yamlcreater.updateField("TestRunnerCommand", distributer.testRunnerCommand_karateMaven());
         console.log(result);
 
         fileOps.deleteFile("TestFeature.feature");
         fileOps.deleteFile("pom.xml");
+        fileOps.deleteFile("cucumber_context.json");
+        fileOps.deleteFile("snooper.log");
+        fileOps.deleteFolder("src/test");
+    });
+});
+
+describe("karate-maven-test-distributer.ts", () => {
+    it("Distribute the karate test for the folders 'src/commons' for MAVEN PROJECT", async () => {
+        createMockLogFile("TestFeature.feature", featureFileContent);
+        createMockLogFile("pom.xml", pomXmlSample);
+
+        await yaml();
+        const folders = ['src/commons','src/maven'];
+        for (const folder of folders) {
+            if (!cmd.findCommand(folder)) {
+                throw new Error(`No feature file found within : ${folder}`);
+            }
+        }
+        const distributer = new KarateTestDistributor();
+        result = await yamlcreater.updateField("TestDiscoveryCommand", distributer.testDiscoverCommand_forFileOrFolder(folders));
+        result = await yamlcreater.updateField("TestRunnerCommand", distributer.testRunnerCommand_karateMaven());
+        console.log(result);
+
+        fileOps.deleteFile("TestFeature.feature");
+        fileOps.deleteFile("pom.xml");
+        fileOps.deleteFile("cucumber_context.json");
+        fileOps.deleteFile("snooper.log");
+        fileOps.deleteFolder("src/test");
+    });
+});
+
+describe("karate-maven-test-distributer.ts", () => {
+    it("Distribute the karate test for the folders 'TestFeature.feature' for MAVEN PROJECT", async () => {
+        createMockLogFile("TestFeature.feature", featureFileContent);
+        createMockLogFile("pom.xml", pomXmlSample);
+
+        await yaml();
+        const folders = ['TestFeature.feature'];
+        for (const folder of folders) {
+            if (!cmd.findCommand(folder)) {
+                throw new Error(`No feature file found within : ${folder}`);
+            }
+        }
+        const distributer = new KarateTestDistributor();
+        result = await yamlcreater.updateField("TestDiscoveryCommand", distributer.testDiscoverCommand_forFileOrFolder(folders));
+        result = await yamlcreater.updateField("TestRunnerCommand", distributer.testRunnerCommand_karateMaven());
+        console.log(result);
+
+        fileOps.deleteFile("TestFeature.feature");
+        fileOps.deleteFile("pom.xml");
+        fileOps.deleteFile("cucumber_context.json");
+        fileOps.deleteFile("snooper.log");
+        fileOps.deleteFolder("src/test");
+    });
+});
+
+describe("karate-maven-test-distributer.ts", () => {
+    it("Distribute the karate test for the folders '*.feature' & 'specific feature file by full path' for MAVEN PROJECT", async () => {
+        createMockLogFile("TestFeature.feature", featureFileContent);
+        createMockLogFile("pom.xml", pomXmlSample);
+
+        await yaml();
+        const folders = ['*.feature','./TestFeature.feature'];
+        for (const folder of folders) {
+            if (!cmd.findCommand(folder)) {
+                throw new Error(`No feature file found within : ${folder}`);
+            }
+        }
+        const distributer = new KarateTestDistributor();
+        result = await yamlcreater.updateField("TestDiscoveryCommand", distributer.testDiscoverCommand_forFileOrFolder(folders));
+        result = await yamlcreater.updateField("TestRunnerCommand", distributer.testRunnerCommand_karateMaven());
+        console.log(result);
+
+        fileOps.deleteFile("TestFeature.feature");
+        fileOps.deleteFile("pom.xml");
+        fileOps.deleteFile("cucumber_context.json");
+        fileOps.deleteFile("snooper.log");
+        fileOps.deleteFolder("src/test");
+    });
+});
+
+// -------- GRADLE PROJECT --------
+describe("karate-gradle-test-distributer.ts", () => {
+    it("Distribute the karate test for the tags @DeleteRequest @UpdateUser for GRADLE PROJECT", async () => {
+        createMockLogFile("TestFeature.feature", featureFileContent);
+        createMockLogFile("build.gradle", gradleSample);
+
+        await yaml();
+        const tags = ['@DeleteRequest', '@UpdateUser'];
+        for (const tag of tags) {
+            if (!cmd.getFeatureFilesForTags(tag)) {
+                throw new Error(`No feature file found which has Tag: ${tag}`);
+            }
+        }
+        const distributer = new KarateTestDistributor();
+        result = await yamlcreater.updateField("TestDiscoveryCommand", distributer.testDiscoverCommand_forTags(tags));
+        result = await yamlcreater.updateField("TestRunnerCommand", distributer.testRunnerCommand_karateGradle());
+        console.log(result);
+
+        fileOps.deleteFile("TestFeature.feature");
+        fileOps.deleteFile("build.gradle");
         fileOps.deleteFile("cucumber_context.json");
         fileOps.deleteFile("snooper.log");
         fileOps.deleteFolder("src/test");

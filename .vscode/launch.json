@@ -79,11 +79,11 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug karateMavenTest-distributer Test: karateMavenTest-distributer.test.ts",
+      "name": "Debug karateTest-distributer Test: karateTest-distributer.test.ts",
       "program": "${workspaceFolder}/node_modules/.bin/tsx",
       "args": [
         "${workspaceFolder}/node_modules/.bin/mocha",
-        "${workspaceFolder}/test/karateMavenTest-distributer.test.ts"
+        "${workspaceFolder}/test/karateTest-distributer.test.ts"
       ],
       "runtimeArgs": [],
       "cwd": "${workspaceFolder}",
