@@ -12,6 +12,7 @@ import * as fileOps from "../commons/fileOperations.js";
 import * as cliLog from "./tools/cli-log.js";
 import * as playwrightTestDistributer from "../playwright-setup/playwright-test-distributer.js";
 import { KarateTestDistributor } from "../karate-setup/karate-test-distributer.js";
+import { UpdateIgnoreFile, resetIgnoreFlag } from "../commons/ignore.js"
 
 const execAsync = util.promisify(exec);
 
@@ -303,6 +304,7 @@ export class HyperexecuteServer {
                     let lastCliOutput = "";
                     const filePath = fileOps.findFileAbsolutePath(process.cwd(), 'hyperexecute-cli.log');
                     if (filePath) fileOps.deleteFile('hyperexecute-cli.log');
+                    UpdateIgnoreFile();
 
                     lastCliOutput = await cliLog.runTest(this.username, this.accessKey);
 
