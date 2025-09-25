@@ -10,7 +10,9 @@
  */
 
 import { HyperexecuteServer } from "./server/HyperexecuteServer.js";
-import * as fileOps from './commons/fileOperations.js';
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 function showHelp() {
     console.log(`
@@ -45,14 +47,15 @@ To run the MCP server:
 }
 
 
-function getVersion() {
-    const pkgJson = fileOps.findFileRelativePath('.', 'package.json');
-    if (pkgJson) {
-        return JSON.parse(fileOps.getFileContent(pkgJson)).version;
-    }
-    else {
-        return "1.0.0";
-    }
+function getVersion(): string {
+  try {
+    const __filename = fileURLToPath(import.meta.url);
+    const pkgPath = path.resolve(__filename, "../../package.json"); // dist/main.js -> ../..
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+    return pkg.version || "1.0.0";
+  } catch {
+    return "1.0.0";
+  }
 }
 
 async function main() {

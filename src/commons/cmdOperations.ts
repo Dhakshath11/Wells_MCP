@@ -1,12 +1,21 @@
 import { exec, execSync } from "child_process";
 import { error } from "console";
 import util from "util";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 
 const execAsync = util.promisify(exec);
 
+// __dirname equivalent in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// path to snooper inside node_modules/@dhakshath11/mcp-server/bin
+const snooperPath = join(__dirname, "..", "..", "bin", "snooper");
+
 export const getFeatureFiles = (): string => {
     try {
-        const stdout = execSync("./snooper --featureFilePaths=. --frameWork=java", {
+        const stdout = execSync(`${snooperPath} --featureFilePaths=. --frameWork=java`, {
             encoding: "utf-8",
             stdio: ["ignore", "pipe", "ignore"] // silence errors
         });
@@ -19,7 +28,7 @@ export const getFeatureFiles = (): string => {
 
 export const getFeatureFilesForTags = (tags: string): string => {
     try {
-        const stdout = execSync(`./snooper --featureFilePaths=. --frameWork=java --specificTags=${tags}`, {
+        const stdout = execSync(`${snooperPath} --featureFilePaths=. --frameWork=java --specificTags=${tags}`, {
             encoding: "utf-8",
             stdio: ["ignore", "pipe", "ignore"] // silence errors
         });

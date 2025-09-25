@@ -20,7 +20,8 @@
     "test_karateTest_distributer": "npx tsx node_modules/.bin/mocha test/karateTest-distributer.test.ts"
   },
   "bin": {
-    "hyper-mcp-server": "./dist/main.js"
+    "hyper-mcp-server": "./dist/main.js",
+    "snooper": "./bin/snooper"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.4",
@@ -49,6 +50,7 @@
     "registry": "https://npm.pkg.github.com/"
   },
   "files": [
-    "dist"
+    "dist",
+    "bin"
   ]
 }
