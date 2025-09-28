@@ -47,6 +47,14 @@ To run the MCP server:
 }
 
 
+/**
+ * Reads and returns the version string from the nearest package.json.
+ *
+ * @returns {string} The version from package.json, or "1.0.0" if not found or on error.
+ *
+ * Looks up the package.json relative to the current file location (works for both src and dist builds).
+ * Returns a fallback version if the file is missing or unreadable.
+ */
 function getVersion(): string {
   try {
     const __filename = fileURLToPath(import.meta.url);

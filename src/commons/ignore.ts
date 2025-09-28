@@ -59,7 +59,8 @@ const ignore = (): void => {
     const requiredEntries = [
         "node_modules/",
         ".m2/",
-        ".gradle/"
+        ".gradle/",
+        "Target"
     ];
 
     let updated = false;

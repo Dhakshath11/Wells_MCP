@@ -579,7 +579,7 @@ export class HyperexecuteServer {
                     const testFiles: string[] = this.frameworkSpecObject.getField("testFiles") ?? [];
                     const packageManager: string = (this.frameworkSpecObject.getField("packageManager") ?? "").toLowerCase();
 
-                    const hasValidFeatures = testFiles.length > 0 && testFiles.every(f => f.toLowerCase().endsWith(".feature"));
+                    const hasValidFeatures = testFiles.length > 0 && testFiles.some(f => f.toLowerCase().includes(".feature"));
                     if (!hasValidFeatures) {
                         return this.rt("No valid `.feature` files found. Please ensure your Karate project has `.feature` files.");
                     }

@@ -1,5 +1,24 @@
+/**
+ * cmdOperations.ts
+ *
+ * Utility functions for executing shell commands and discovering test files in Java/BDD frameworks.
+ *
+ * Author: Dhakshath Amin
+ * Date: 27 September 2025
+ * Description:
+ * Provides wrappers around the `snooper` binary and shell commands to:
+ *   - Discover feature files in Java projects
+ *   - Filter feature files by tags
+ *   - Find files or folders matching patterns
+ *
+ * Key Features:
+ * - Uses child_process execSync for synchronous command execution
+ * - Handles errors gracefully and returns clean output
+ * - Escapes shell input for safety
+ * - Designed for use in LambdaTest/HyperExecute automation tools
+ */
+
 import { exec, execSync } from "child_process";
-import { error } from "console";
 import util from "util";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -10,10 +29,17 @@ const execAsync = util.promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// path to snooper inside node_modules/@dhakshath11/mcp-server/bin
+// Path to snooper inside node_modules/@dhakshath11/mcp-server/bin
 const snooperPath = join(__dirname, "..", "..", "bin", "snooper");
 
 export const getFeatureFiles = (): string => {
+/**
+ * Discover all feature files in the current directory for Java frameworks.
+ * Uses the `snooper` binary to scan for `.feature` files.
+ *
+ * @returns {string} Newline-separated list of feature file paths.
+ * @throws {Error} If the snooper binary fails or is missing.
+ */
     try {
         const stdout = execSync(`${snooperPath} --featureFilePaths=. --frameWork=java`, {
             encoding: "utf-8",
@@ -27,6 +53,14 @@ export const getFeatureFiles = (): string => {
 }
 
 export const getFeatureFilesForTags = (tags: string): string => {
+/**
+ * Discover feature files matching specific tags in the current directory for Java frameworks.
+ * Uses the `snooper` binary with the `--specificTags` option.
+ *
+ * @param {string} tags - Comma-separated list of tags to filter feature files.
+ * @returns {string} Newline-separated list of matching feature file paths.
+ * @throws {Error} If the snooper binary fails or is missing.
+ */
     try {
         const stdout = execSync(`${snooperPath} --featureFilePaths=. --frameWork=java --specificTags=${tags}`, {
             encoding: "utf-8",
@@ -47,6 +81,18 @@ export const getFeatureFilesForTags = (tags: string): string => {
  * 3. A pattern (e.g., *.feature)
  */
 export const findCommand = (INPUT: string): string => {
+/**
+ * Discover files or folders based on a single input.
+ * Input can be:
+ *   1. A folder path
+ *   2. A specific file path or file name
+ *   3. A pattern (e.g., *.feature)
+ * Uses shell find command for flexible discovery.
+ *
+ * @param {string} INPUT - The folder, file, or pattern to search for.
+ * @returns {string} Newline-separated list of matching file paths.
+ * @throws {Error} If the find command fails or input is invalid.
+ */
     try {
         // Escape double quotes for shell safety
         const escapedInput = INPUT.replace(/"/g, '\\"');

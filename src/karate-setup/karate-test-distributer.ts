@@ -1,3 +1,21 @@
+/**
+ * karate-test-distributer.ts
+ *
+ * Utility class for distributing Karate test execution across parallel machines.
+ *
+ * Author: Dhakshath Amin
+ * Date: 27 September 2025
+ * Description:
+ *   - Provides methods to discover feature files and tags for Karate tests
+ *   - Generates test discovery and runner commands for Maven and Gradle
+ *   - Ensures required test runner Java class exists
+ *
+ * Key Features:
+ * - Tag-based and file-based test discovery for Karate
+ * - Safe shell command construction for test discovery
+ * - Automatic creation of LambdaRunner Java class for test execution
+ * - Integration with Maven and Gradle build tools
+ */
 
 import * as fileOps from '../commons/fileOperations.js';
 import * as path from "path";
@@ -6,6 +24,14 @@ import * as gradle_setup from '../commons/gradle/gradle-setup.js'
 import * as cmd from "../commons/cmdOperations.js"
 
 export class KarateTestDistributor {
+
+    /**
+     * Checks if any feature file exists with the given tag.
+     * Throws an error if no matching file is found.
+     * @param tag Karate tag to search for (e.g. "@smoke")
+     * @returns {boolean} True if at least one file is found
+     * @throws {Error} If no feature file is found with the tag
+     */
 
     public hasFeatureWithTag(tag: string): boolean {
         const result = cmd.getFeatureFilesForTags(tag)?.trim();
@@ -16,11 +42,23 @@ export class KarateTestDistributor {
     }
 
     public testDiscoverCommand_forTags(tags: string[]): string {
+    /**
+     * Generates a shell command to discover feature files by tags.
+     * @param tags Array of Karate tags to search for
+     * @returns {string} Shell command for test discovery by tags
+     */
         const testDiscoveryCommand = `./snooper --featureFilePaths=. --frameWork=java --specificTags=${tags.join(' ')}`;
         return testDiscoveryCommand;
     }
 
     public hasFeatureFileOrFolder(ff: string): boolean {
+    /**
+     * Checks if any feature file or folder exists for the given input.
+     * Throws an error if no matching file is found.
+     * @param ff File or folder path or pattern
+     * @returns {boolean} True if at least one file is found
+     * @throws {Error} If no feature file is found in the input
+     */
         const result = cmd.findCommand(ff)?.trim();
         if (!result) {
             throw new Error(`No feature file found within : ${ff}`);
@@ -29,6 +67,12 @@ export class KarateTestDistributor {
     }
 
     public testDiscoverCommand_forFileOrFolder(INPUTS: string[]): string {
+    /**
+     * Generates a shell command to discover feature files by file or folder input(s).
+     * Escapes input for shell safety and supports multiple inputs.
+     * @param INPUTS Array of file/folder paths or patterns
+     * @returns {string} Shell command for test discovery by file/folder
+     */
         // Escape each input for shell safety
         const escapedInputs = INPUTS.map(i => i.replace(/"/g, '\\"'));
 
@@ -43,6 +87,10 @@ export class KarateTestDistributor {
     }
 
     private create_karate_testRunner(): void {
+    /**
+     * Ensures the LambdaRunner Java class exists for Karate test execution.
+     * Creates the file if missing, with the required JUnit5 runner code.
+     */
         // Use path.join for cross-platform paths
         const filePath = path.join("src", "test", "java", "LambdaRunner.java");
 
@@ -72,6 +120,12 @@ export class KarateTestDistributor {
     }
 
     public testRunnerCommand_karateMaven(): string {
+    /**
+     * Generates the Maven test runner command for Karate using LambdaRunner.
+     * Ensures dependencies and runner class are present.
+     * @returns {string} Maven command to run Karate tests
+     * @throws {Error} If setup or file creation fails
+     */
         try {
             maven_setup.add_karate_junit5();
             this.create_karate_testRunner();
@@ -84,6 +138,12 @@ export class KarateTestDistributor {
     }
 
     public testRunnerCommand_karateGradle(): string {
+    /**
+     * Generates the Gradle test runner command for Karate using LambdaRunner.
+     * Ensures dependencies and runner class are present.
+     * @returns {string} Gradle command to run Karate tests
+     * @throws {Error} If setup or file creation fails
+     */
         try {
             gradle_setup.add_karate_junit5();
             this.create_karate_testRunner();
