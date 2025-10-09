@@ -11,6 +11,7 @@
 import * as fs from "fs";
 import { framework_comp } from "../../commons/framework_comp.js";
 import * as cmd from "../../commons/cmdOperations.js";
+import logger from "../../commons/logger.js";
 
 /**
  * Describes the structure of the parsed analysis output.
@@ -47,10 +48,14 @@ class FrameworkSpecAnalyzer {
      * @returns Last line of the file as a string
      */
     private getLastLine(filePath: string): string {
-        if (!fs.existsSync(filePath)) throw new Error(`File ${filePath} does not exist`);
-
+        if (!fs.existsSync(filePath)) {
+            logger.error(`File ${filePath} does not exist`);
+            throw new Error(`File ${filePath} does not exist`);
+        }
         const data = fs.readFileSync(filePath, "utf-8");
         const lines = data.trim().split("\n");
+        logger.info(`Read last line from ${filePath}`);
+        logger.debug(`As per hyper_log file: ${lines[lines.length - 1]}`);
         return lines[lines.length - 1];
     }
 
@@ -160,11 +165,15 @@ class FrameworkSpecAnalyzer {
         let testFiles = this.extractTestFiles(msg);
         if (testFrameworks.some(f => f.toLowerCase().includes("karate"))) {
             try {
+                logger.info(`Detected Karate framework, running snooper for .feature files.`);
                 const stdout = cmd.getFeatureFiles();
                 const karateFiles = stdout.split("\n").map(f => f.trim()).filter(Boolean);
                 testFiles = Array.from(new Set([...testFiles, ...karateFiles]));
-            } catch (error) { }
+            } catch (error) {
+                logger.error(`Error running snooper for Karate files: ${error}`);
+            }
         }
+        logger.info(`Extracted test files: ${testFiles.join(", ")}`);
         return testFiles;
     }
 
@@ -177,9 +186,9 @@ class FrameworkSpecAnalyzer {
     public parseAnalysisLog(forceRefresh: boolean = false): AnalysisOutput {
         // Return cached result if available and not forcing refresh
         if (this.cachedOutput && !forceRefresh) {
+            logger.info(`Returning cached analysis output.`);
             return this.cachedOutput;
         }
-
         try {
             const lastLine = this.getLastLine(this.logFilePath);
             // Parse the last line as JSON
@@ -217,10 +226,11 @@ class FrameworkSpecAnalyzer {
                 externalReporters: this.extractList(msg, "ExternalReporters"),
                 testFiles,
             };
-
+            logger.info(`Parsed analysis log successfully.`);
             return this.cachedOutput;
         }
         catch (error: any) {
+            logger.error(`Error parsing analysis log: ${error.message}`);
             throw new Error(`Error parsing analysis log: ${error.message}`);
         }
     }

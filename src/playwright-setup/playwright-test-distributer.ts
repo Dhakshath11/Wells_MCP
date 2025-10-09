@@ -14,6 +14,7 @@
 import * as fileOps from '../commons/fileOperations.js';
 import { FrameworkSpecAnalyzer } from '../server/tools/framework-spec.js';
 import micromatch from 'micromatch';
+import logger from "../commons/logger.js";
 
 // Returns the test files that match the given test name or glob pattern.
 //
@@ -45,11 +46,14 @@ function does_TestExists(testName: string): string[] {
         const matchedTestFiles: string[] = testFiles.filter(testFile =>
             micromatch.isMatch(testFile, testName, { matchBase: true, nocase: true, contains: true }));
         if (matchedTestFiles.length === 0) {
+            logger.error(`No tests found which match the pattern "${testName}". Available tests: ${testFiles.join(", ")}`);
             throw new Error(`No tests found which match the pattern "${testName}". Available tests: ${testFiles.join(", ")}`);
         }
+        logger.info(`Matched test files for pattern "${testName}": ${matchedTestFiles.join(", ")}`);
         return matchedTestFiles;
     }
     catch (error: any) {
+        logger.error(`Error in does_TestExists: ${error.message}`);
         throw new Error(`${error.message}`);
     }
 }
@@ -70,6 +74,7 @@ function does_DirectoryHaveTests(directory: string): string {
         // Ensure directory exists on Repo
         const relativePathDir = fileOps.findFileRelativePathFolder('.', directory);
         if (!relativePathDir) {
+            logger.error(`Directory "${directory}" does not exist. Please provide a valid directory.`);
             throw new Error(`Directory "${directory}" does not exist. Please provide a valid directory.`);
         }
 
@@ -80,12 +85,15 @@ function does_DirectoryHaveTests(directory: string): string {
         // Check if any test file is inside the given directory
         const found = testFiles.some(testFile => testFile.includes(directory));
         if (!found) {
+            logger.error(`No tests found in directory "${directory}". Available tests: ${testFiles.join(", ")}`);
             throw new Error(
                 `No tests found in directory "${directory}". Available tests: ${testFiles.join(", ")}`
             );
         }
+        logger.info(`Found tests in directory "${directory}".`);
         return relativePathDir;
     } catch (error: any) {
+        logger.error(`Error in does_DirectoryHaveTests: ${error.message}`);
         throw new Error(`${error.message}`);
     }
 }
@@ -100,12 +108,10 @@ function does_TestContainTag(testTag: string): boolean {
     try {
         const frameworkSpecAnalyzer: FrameworkSpecAnalyzer = new FrameworkSpecAnalyzer();
         const testFiles: string[] = frameworkSpecAnalyzer.getField("testFiles");
-
         const found = testFiles.some(testFile => {
             const testFileContent = fileOps.getFileContent(testFile);
             const regex = /test(?:\.describe)?\(\s*(['"`])(.+?)\1/gi; // case-insensitive & global
             let match;
-
             while ((match = regex.exec(testFileContent)) !== null) {
                 const description = match[2]; // string inside test(...) or test.describe(...)
                 if (description.toLowerCase().includes(testTag.toLowerCase())) {
@@ -114,15 +120,16 @@ function does_TestContainTag(testTag: string): boolean {
             }
             return false;
         });
-
         if (!found) {
+            logger.error(`No tests found which contain the tag "${testTag}". Available tests: ${testFiles.join(", ")}`);
             throw new Error(
                 `No tests found which contain the tag "${testTag}". Available tests: ${testFiles.join(", ")}`
             );
         }
-
+        logger.info(`Found tests containing tag "${testTag}".`);
         return true;
     } catch (error: any) {
+        logger.error(`Error in does_TestContainTag: ${error.message}`);
         throw new Error(`Error checking test tags: ${error.message}`);
     }
 }
@@ -138,7 +145,10 @@ function does_TestContainTag(testTag: string): boolean {
  */
 function playwrightTestDistributer_BySpecificTest(testFiles: string[]): string {
     const tests = testFiles.join(' ');
-    return `echo ${tests} | tr ' ' '\\n'`
+    logger.info(`Generated shell command for specific test distribution: ${tests}`);
+    const finCommand = `echo ${tests} | tr ' ' '\\n'`
+    logger.debug(`By SpecificTest: ${finCommand}`);
+    return finCommand;
 }
 
 /**
@@ -151,6 +161,7 @@ function playwrightTestDistributer_BySpecificTest(testFiles: string[]): string {
  * @throws {Error} If test discovery fails.
  */
 function playwrightTestDistributer_ByTest(testDir: string[]): string {
+    logger.info(`Generated shell command for individual test distribution in directories: ${testDir.join(', ')}`);
     return `grep -nri 'test(' ${testDir.join(' ')} | sed -E 's/^([^:]+:[0-9]+):.*/\\1/' | sort -u`;
 }
 
@@ -164,7 +175,10 @@ function playwrightTestDistributer_ByTest(testDir: string[]): string {
  * @throws {Error} If test group discovery fails.
  */
 function playwrightTestDistributer_ByTestGroups(testDir: string[]): string {
-    return `grep -nri 'test.describe' ${testDir.join(' ')} | sed 's/:test.*//' | sort -u`;
+    logger.info(`Generated shell command for test group distribution in directories: ${testDir.join(', ')}`);
+    const finCommand = `grep -nri 'test.describe' ${testDir.join(' ')} | sed 's/:test.*//' | sort -u`;
+    logger.debug(`By TestGroups: ${finCommand}`);
+    return finCommand;
 }
 
 /**
@@ -181,15 +195,15 @@ function playwrightTestDistributer_ByTestGroups(testDir: string[]): string {
  */
 function playwrightTestDistributer_ByTagName(tagName: string[]): string {
     let testTag = tagName[0];
-    console.error(testTag);
     // Add logic to handle multiple tags
-    for(let i = 1; i < tagName.length; i++){
-        console.error(tagName[i]);
+    for (let i = 1; i < tagName.length; i++) {
         testTag = testTag + `|` + tagName[i];
-        console.error(testTag);
     }
     testTag = `"${testTag}"`;
-    return `npx playwright test --list --grep ${testTag} | awk '/:/{print $1}' | grep -vE 'Listing|Total' | sort -u`
+    logger.info(`Generated shell command for tag/name filtered test distribution: ${testTag}`);
+    const finCommand = `npx playwright test --list --grep ${testTag} | awk '/:/{print $1}' | grep -vE 'Listing|Total' | sort -u`;
+    logger.debug(`By TagName: ${finCommand}`);
+    return finCommand;
 }
 
 export {

@@ -22,6 +22,7 @@ import * as path from "path";
 import * as maven_setup from '../commons/maven/maven-setup.js'
 import * as gradle_setup from '../commons/gradle/gradle-setup.js'
 import * as cmd from "../commons/cmdOperations.js"
+import logger from "../commons/logger.js";
 
 export class KarateTestDistributor {
 
@@ -36,43 +37,49 @@ export class KarateTestDistributor {
     public hasFeatureWithTag(tag: string): boolean {
         const result = cmd.getFeatureFilesForTags(tag)?.trim();
         if (!result) {
+            logger.error(`No feature file found with tag: ${tag}`);
             throw new Error(`No feature file found with tag: ${tag}`);
         }
+        logger.info(`Feature file found for tag: ${tag}`);
         return true;
     }
 
     public testDiscoverCommand_forTags(tags: string[]): string {
-    /**
-     * Generates a shell command to discover feature files by tags.
-     * @param tags Array of Karate tags to search for
-     * @returns {string} Shell command for test discovery by tags
-     */
+        /**
+         * Generates a shell command to discover feature files by tags.
+         * @param tags Array of Karate tags to search for
+         * @returns {string} Shell command for test discovery by tags
+         */
         const testDiscoveryCommand = `./snooper --featureFilePaths=. --frameWork=java --specificTags=${tags.join(' ')}`;
+        logger.debug(`testDiscoveryCommand: ${testDiscoveryCommand}`);
+        logger.info(`Generated test discovery command for tags: ${tags.join(', ')}`);
         return testDiscoveryCommand;
     }
 
     public hasFeatureFileOrFolder(ff: string): boolean {
-    /**
-     * Checks if any feature file or folder exists for the given input.
-     * Throws an error if no matching file is found.
-     * @param ff File or folder path or pattern
-     * @returns {boolean} True if at least one file is found
-     * @throws {Error} If no feature file is found in the input
-     */
+        /**
+         * Checks if any feature file or folder exists for the given input.
+         * Throws an error if no matching file is found.
+         * @param ff File or folder path or pattern
+         * @returns {boolean} True if at least one file is found
+         * @throws {Error} If no feature file is found in the input
+         */
         const result = cmd.findCommand(ff)?.trim();
         if (!result) {
+            logger.error(`No feature file found within: ${ff}`);
             throw new Error(`No feature file found within : ${ff}`);
         }
+        logger.info(`Feature file found for input: ${ff}`);
         return true;
     }
 
     public testDiscoverCommand_forFileOrFolder(INPUTS: string[]): string {
-    /**
-     * Generates a shell command to discover feature files by file or folder input(s).
-     * Escapes input for shell safety and supports multiple inputs.
-     * @param INPUTS Array of file/folder paths or patterns
-     * @returns {string} Shell command for test discovery by file/folder
-     */
+        /**
+         * Generates a shell command to discover feature files by file or folder input(s).
+         * Escapes input for shell safety and supports multiple inputs.
+         * @param INPUTS Array of file/folder paths or patterns
+         * @returns {string} Shell command for test discovery by file/folder
+         */
         // Escape each input for shell safety
         const escapedInputs = INPUTS.map(i => i.replace(/"/g, '\\"'));
 
@@ -83,14 +90,16 @@ export class KarateTestDistributor {
 
         // Join all commands with ' ; ' so they run sequentially
         const testDiscoveryCommand = commands.join(' ; ');
+        logger.debug(`testDiscoveryCommand: ${testDiscoveryCommand}`);
+        logger.info(`Generated test discovery command for file/folder inputs: ${INPUTS.join(', ')}`);
         return testDiscoveryCommand;
     }
 
     private create_karate_testRunner(): void {
-    /**
-     * Ensures the LambdaRunner Java class exists for Karate test execution.
-     * Creates the file if missing, with the required JUnit5 runner code.
-     */
+        /**
+         * Ensures the LambdaRunner Java class exists for Karate test execution.
+         * Creates the file if missing, with the required JUnit5 runner code.
+         */
         // Use path.join for cross-platform paths
         const filePath = path.join("src", "test", "java", "LambdaRunner.java");
 
@@ -116,41 +125,49 @@ export class KarateTestDistributor {
             `;
 
             fileOps.writeFile(filePath, classfileContent);
+            logger.debug(`New Class file created for karate-project with content: ${classfileContent}`);
+            logger.info(`Created LambdaRunner.java for Karate test execution.`);
         }
     }
 
     public testRunnerCommand_karateMaven(): string {
-    /**
-     * Generates the Maven test runner command for Karate using LambdaRunner.
-     * Ensures dependencies and runner class are present.
-     * @returns {string} Maven command to run Karate tests
-     * @throws {Error} If setup or file creation fails
-     */
+        /**
+         * Generates the Maven test runner command for Karate using LambdaRunner.
+         * Ensures dependencies and runner class are present.
+         * @returns {string} Maven command to run Karate tests
+         * @throws {Error} If setup or file creation fails
+         */
         try {
             maven_setup.add_karate_junit5();
             this.create_karate_testRunner();
             const testRunnerCommand = `mvn test -Dtest=LambdaRunner -Dkarate.options=$test`;
+            logger.debug(`testRunnerCommand: ${testRunnerCommand}`);
+            logger.info(`Generated Karate Maven test runner command.`);
             return testRunnerCommand;
         }
         catch (error: any) {
+            logger.error(`Error creating Karate Maven test runner command`, error);
             throw new Error(`Error is creating TestRunnerCommand for Maven project: ${error.message}`)
         }
     }
 
     public testRunnerCommand_karateGradle(): string {
-    /**
-     * Generates the Gradle test runner command for Karate using LambdaRunner.
-     * Ensures dependencies and runner class are present.
-     * @returns {string} Gradle command to run Karate tests
-     * @throws {Error} If setup or file creation fails
-     */
+        /**
+         * Generates the Gradle test runner command for Karate using LambdaRunner.
+         * Ensures dependencies and runner class are present.
+         * @returns {string} Gradle command to run Karate tests
+         * @throws {Error} If setup or file creation fails
+         */
         try {
             gradle_setup.add_karate_junit5();
             this.create_karate_testRunner();
             const testRunnerCommand = `gradle test --tests LambdaRunner -Dkarate.options=$test`;
+            logger.debug(`testRunnerCommand: ${testRunnerCommand}`);
+            logger.info(`Generated Karate Gradle test runner command.`);
             return testRunnerCommand;
         }
         catch (error: any) {
+            logger.error(`Error creating Karate Gradle test runner command`, error);
             throw new Error(`Error is creating TestRunnerCommand for Gradle project: ${error.message}`)
         }
     }

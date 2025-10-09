@@ -10,6 +10,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import logger from "./logger.js";
 
 /**
  * Checks if a file exists.
@@ -27,7 +28,11 @@ function fileExists(filePath: string): boolean {
  * @returns File content as string
  */
 function getFileContent(filePath: string): string {
-    if (!fs.existsSync(filePath)) throw new Error(`File ${filePath} does not exist`);
+    if (!fs.existsSync(filePath)) {
+        logger.error(`File ${filePath} does not exist`);
+        throw new Error(`File ${filePath} does not exist`);
+    }
+    logger.info(`Read file: ${filePath}`);
     return fs.readFileSync(filePath, 'utf-8');
 }
 
@@ -38,9 +43,12 @@ function getFileContent(filePath: string): string {
  */
 function writeFile(filePath: string, doc: string) {
     const dir = path.dirname(filePath);
-    if (!fileExists(dir))
+    if (!fileExists(dir)) {
         fs.mkdirSync(dir, { recursive: true });
+        logger.info(`Created directory: ${dir}`);
+    }
     fs.writeFileSync(filePath, doc, 'utf-8');
+    logger.info(`Wrote file: ${filePath}`);
 }
 
 /**
@@ -55,6 +63,7 @@ function findFileAbsolutePath(startDir: string, fileName: string): string | null
     for (const entry of entries) {
         const fullPath = path.resolve(startDir, entry.name);  // resolve: Absolute path
         if (entry.isFile() && entry.name.toLocaleLowerCase() === fileName.toLocaleLowerCase()) {
+            logger.info(`Found file (absolute): ${fullPath}`);
             return fullPath; // File found
         }
         if (entry.isDirectory()) {
@@ -73,10 +82,12 @@ function findFileAbsolutePath(startDir: string, fileName: string): string | null
  * @returns Relative path if found, otherwise null
  */
 function findFileRelativePath(startDir: string, fileName: string): string | null {
+    logger.info(`Will skip searching in these files: node_modules, .git, dist, build}`);
     const entries = fs.readdirSync(startDir, { withFileTypes: true });
     for (const entry of entries) {
         const fullPath = path.join(startDir, entry.name);
         if (entry.isFile() && entry.name.toLocaleLowerCase() === fileName.toLocaleLowerCase()) {
+            logger.info(`Found file (relative): ${fullPath}`);
             return fullPath; // File found
         }
         if (entry.isDirectory()) {
@@ -100,11 +111,13 @@ function findFileRelativePath(startDir: string, fileName: string): string | null
  * @returns Relative path if found, otherwise null
  */
 function findFileRelativePathFolder(startDir: string, fileName: string): string | null {
+    logger.info(`Will skip searching in these files: node_modules, .git, dist, build}`);
     const entries = fs.readdirSync(startDir, { withFileTypes: true });
     for (const entry of entries) {
         const fullPath = path.join(startDir, entry.name);
         if ((fullPath.toLocaleLowerCase().trim() === fileName.toLocaleLowerCase().trim())
             || (entry.name.toLocaleLowerCase().trim() === fileName.toLocaleLowerCase().trim())) {
+            logger.info(`Found folder (relative): ${fullPath}`);
             return fullPath; // File found
         }
         if (entry.isDirectory()) {
@@ -127,6 +140,7 @@ function findFileRelativePathFolder(startDir: string, fileName: string): string 
 function deleteFile(filePath: string): void {
     if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
+        logger.info(`Deleted file: ${filePath}`);
     }
 }
 
@@ -137,6 +151,7 @@ function deleteFile(filePath: string): void {
 function deleteFolder(folderPath: string): void {
     if (fs.existsSync(folderPath)) {
         fs.rmSync(folderPath, { recursive: true, force: true });
+        logger.info(`Deleted folder: ${folderPath}`);
     }
 }
 
@@ -149,11 +164,13 @@ function deleteFolder(folderPath: string): void {
  * @returns Relative import path as a string
  */
 function getRelativeImport(testFile: string, setupFile: string): string {
+    logger.debug(`Computing relative import from ${testFile} to ${setupFile}`);
     const testDir = path.dirname(testFile);
     let relPath = path.relative(testDir, setupFile);
     if (!relPath.startsWith(".")) {
         relPath = "./" + relPath;
     }
+    logger.debug(`Computed relative import from ${testFile} to ${setupFile}: ${relPath.replace(/\\/g, "/")}`);
     return relPath.replace(/\\/g, "/"); // for Windows paths
 }
 

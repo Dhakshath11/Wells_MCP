@@ -12,6 +12,7 @@
 import { exec } from "child_process";
 import util from "util";
 import * as fileOps from "../commons/fileOperations.js";
+import logger from "../commons/logger.js";
 
 const execAsync = util.promisify(exec);
 const playwright_hyperexecute_yaml_url = "https://gist.githubusercontent.com/Dhakshath11/35a42bf955415621c2a5d4d836d22aa8/raw/hyperexecute.yaml";
@@ -23,9 +24,17 @@ const karate_gradle_hyperexecute_yaml_url = "https://gist.githubusercontent.com/
 
 async function downloadFile(url: string, target: string): Promise<boolean> {
   try {
+    logger.info(`Starting download: ${url} -> ${target}`);
     await execAsync(`curl -L -o ${target} ${url}`, { timeout: 60000 }); // Timeout for 60 seconds
-    return fileOps.fileExists(target);
+    const exists = fileOps.fileExists(target);
+    if (exists) {
+      logger.info(`Download successful: ${target}`);
+    } else {
+      logger.error(`Download failed: ${target} does not exist after download. check url: ${url}`);
+    }
+    return exists;
   } catch (error: any) {
+    logger.error(`Error downloading ${target}: ${error.message}`);
     throw new Error(`Error downloading ${target}: ${error.message}`);
   }
 }

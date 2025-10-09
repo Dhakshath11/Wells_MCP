@@ -13,9 +13,11 @@ import { HyperexecuteServer } from "./server/HyperexecuteServer.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import logger from "./commons/logger.js";
 
 function showHelp() {
-    console.log(`
+  logger.info("Showing help message for hyper-mcp-server.");
+  console.log(`
 Usage: npx hyper-mcp-server [options]
 
 Options:
@@ -60,28 +62,31 @@ function getVersion(): string {
     const __filename = fileURLToPath(import.meta.url);
     const pkgPath = path.resolve(__filename, "../../package.json"); // dist/main.js -> ../..
     const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+    logger.info(`Read version from package.json: ${pkg.version}`);
     return pkg.version || "1.0.0";
-  } catch {
+  } catch (error: any) {
+    logger.error(`Error reading version from package.json: ${error?.message}`);
     return "1.0.0";
   }
 }
 
 async function main() {
-    const args = process.argv.slice(2);
-
-    if (args.includes("--help")) {
-        showHelp();
-        process.exit(0);
-    }
-
-    if (args.includes("--version")) {
-        const version = getVersion();
-        console.log(`hyper-mcp-server version ${version}`);
-        process.exit(0);
-    }
-
-    const app = new HyperexecuteServer();
-    app.start();
+  const args = process.argv.slice(2);
+  logger.info(`Starting hyper-mcp-server with args: ${args.join(' ')}`);
+  if (args.includes("--help")) {
+    showHelp();
+    process.exit(0);
+  }
+  if (args.includes("--version")) {
+    const version = getVersion();
+    logger.info(`hyper-mcp-server version: ${version}`);
+    console.log(`hyper-mcp-server version ${version}`);
+    process.exit(0);
+  }
+  logger.info("--- Instantiating HyperexecuteServer... ---");
+  const app = new HyperexecuteServer();
+  app.start();
+  logger.info("--- HyperexecuteServer started ---");
 }
 
 main();

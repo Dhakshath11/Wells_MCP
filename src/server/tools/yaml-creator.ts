@@ -11,6 +11,7 @@
 import * as YAML from "yaml";
 import * as fileOps from "../../commons/fileOperations.js";
 import { download_karate_gradle_hyperexecute_yaml, download_karate_maven_hyperexecute_yaml, download_Playwright_hyperexecute_yaml } from "../../resources/download-file.js";
+import logger from "../../commons/logger.js";
 type yaml = YAML.Document.Parsed;
 
 export class HyperexecuteYaml {
@@ -21,7 +22,9 @@ export class HyperexecuteYaml {
      */
     public async ensureYamlFile_Playwright(): Promise<void> {
         if (!fileOps.fileExists(this.fileName)) {
+            logger.info(`Playwright YAML file not found. Downloading...`);
             await download_Playwright_hyperexecute_yaml();
+            logger.info(`Playwright YAML file downloaded.`);
         }
     }
 
@@ -30,7 +33,9 @@ export class HyperexecuteYaml {
      */
     public async ensureYamlFile_Karate_Maven(): Promise<void> {
         if (!fileOps.fileExists(this.fileName)) {
+            logger.info(`Karate Maven YAML file not found. Downloading...`);
             await download_karate_maven_hyperexecute_yaml();
+            logger.info(`Karate Maven YAML file downloaded.`);
         }
     }
 
@@ -39,7 +44,9 @@ export class HyperexecuteYaml {
      */
     public async ensureYamlFile_Karate_Gradle(): Promise<void> {
         if (!fileOps.fileExists(this.fileName)) {
+            logger.info(`Karate Gradle YAML file not found. Downloading...`);
             await download_karate_gradle_hyperexecute_yaml();
+            logger.info(`Karate Gradle YAML file downloaded.`);
         }
     }
 
@@ -69,6 +76,7 @@ export class HyperexecuteYaml {
      */
     private loadYaml(): yaml {
         const raw = fileOps.getFileContent(this.fileName);
+        logger.info(`Loaded YAML file: ${this.fileName}`);
         return YAML.parseDocument(raw);
     }
 
@@ -78,6 +86,7 @@ export class HyperexecuteYaml {
     private saveYaml(doc: yaml): string {
         const yamlContent = doc.toString();
         fileOps.writeFile(this.fileName, yamlContent);
+        logger.info(`Saved YAML file: ${this.fileName}`);
         return yamlContent;
     }
 
@@ -149,15 +158,16 @@ export class HyperexecuteYaml {
         testPath = "tests/page_test.spec.js"
     ): Promise<string> {
         try {
+            logger.info(`Creating Playwright YAML for project: ${projectName}, ID: ${projectID}`);
             await this.downloadYamlFile_Playwright(); // Always Download the fresh YAML file during creation
             const doc = this.loadYaml();
-
             this.updateProject(doc, { name: projectName, id: projectID });
             this.updatePre(doc, playwrightVersion);
             this.updateTestRunnerCommand(doc, `npx playwright test ${testPath}`);
-
+            logger.info(`Playwright YAML updated with runner command and project metadata.`);
             return this.saveYaml(doc);
         } catch (error: any) {
+            logger.error(`Error creating YAML file: ${error.message}`);
             throw new Error(`Error creating YAML file: ${error.message}`);
         }
     }
@@ -171,24 +181,27 @@ export class HyperexecuteYaml {
         buildTool: string,
     ): Promise<string> {
         try {
+            logger.info(`Creating Karate YAML for project: ${projectName}, ID: ${projectID}, build tool: ${buildTool}`);
             if (buildTool.toLowerCase() === "maven") {
                 await this.downloadYamlFile_Karate_Maven(); // Always Download the fresh YAML file during creation
                 const doc = this.loadYaml();
-
                 this.updateProject(doc, { name: projectName, id: projectID });
                 this.updateTestRunnerCommand(doc, "mvn test");
+                logger.info(`Karate Maven YAML updated with runner command and project metadata.`);
                 return this.saveYaml(doc);
             } else if (buildTool.toLowerCase() === "gradle") {
                 await this.downloadYamlFile_Karate_Gradle(); // Always Download the fresh YAML file during creation
                 const doc = this.loadYaml();
-
                 this.updateProject(doc, { name: projectName, id: projectID });
                 this.updateTestRunnerCommand(doc, "gradle test");
+                logger.info(`Karate Gradle YAML updated with runner command and project metadata.`);
                 return this.saveYaml(doc);
             } else {
+                logger.error(`Unsupported build tool: ${buildTool}`);
                 throw new Error(`Unsupported build tool: ${buildTool}`);
             }
         } catch (error: any) {
+            logger.error(`Error creating YAML file: ${error.message}`);
             throw new Error(`Error creating YAML file: ${error.message}`);
         }
     }
@@ -198,6 +211,7 @@ export class HyperexecuteYaml {
      */
     async updateField(whichCommand: string, value: string): Promise<string> {
         try {
+            logger.info(`Updating YAML field: ${whichCommand} with value: ${value}`);
             const doc = this.loadYaml();
             switch (whichCommand) {
                 case "TestRunnerCommand":
@@ -208,11 +222,13 @@ export class HyperexecuteYaml {
                     this.updateTestDiscoveryCommand(doc, value);
                     break;
                 default:
+                    logger.error(`Unsupported command type: ${whichCommand}`);
                     throw new Error(`Unsupported command type: ${whichCommand}`);
             }
-
+            logger.info(`YAML field updated: ${whichCommand}`);
             return this.saveYaml(doc);
         } catch (error: any) {
+            logger.error(`Error updating YAML field [${whichCommand}]: ${error.message}`);
             throw new Error(`Error updating YAML field [${whichCommand}]: ${error.message}`);
         }
     }

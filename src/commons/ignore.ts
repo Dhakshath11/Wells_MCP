@@ -24,6 +24,7 @@
  */
 
 import * as fileOps from "./fileOperations.js";
+import logger from "./logger.js";
 let ignoreFileSet = false; // module-level flag
 
 const ignore = (): void => {
@@ -40,11 +41,14 @@ const ignore = (): void => {
         }
     }
 
+    logger.debug(`Ignore file selected: ${ignoreFilePath || ".hyperexecuteignore"}`);
+
     // Step 2: if none exists, create a .hyperexecuteignore
     if (!ignoreFilePath) {
         ignoreFilePath = ".hyperexecuteignore";
         fileOps.writeFile(ignoreFilePath, "");
         ignoreFile = "";
+        logger.info("Created .hyperexecuteignore file");
     }
 
     // Step 3: normalize existing content into lines
@@ -69,6 +73,7 @@ const ignore = (): void => {
         if (![...existingLines].some(line => line.toLowerCase() === entry.toLowerCase())) {
             existingLines.add(`**/${entry}`);
             updated = true;
+            logger.debug(`Added ignore entry: **/${entry}`);
         }
     }
 
@@ -76,11 +81,13 @@ const ignore = (): void => {
     if (updated) {
         const newContent = [...existingLines].join("\n") + "\n";
         fileOps.writeFile(ignoreFilePath, newContent);
+        logger.info(`Updated ignore file: ${ignoreFilePath}`);
     }
 };
 
 export const UpdateIgnoreFile = (): void => {
     if (!ignoreFileSet) {
+        logger.debug("Updating ignore file...");
         ignore();
         ignoreFileSet = true;
     }
@@ -88,4 +95,5 @@ export const UpdateIgnoreFile = (): void => {
 
 export const resetIgnoreFlag = (): void => {
     ignoreFileSet = false;
+    logger.debug("Ignore file flag reset.");
 };

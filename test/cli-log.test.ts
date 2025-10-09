@@ -11,12 +11,17 @@
 import { expect } from 'chai';
 import * as cli from "../src/server/tools/cli-log.js";
 import * as fileOps from "../src/commons/fileOperations.js";
+import logger from "../src/commons/logger";
 
 describe("cli-log.test.ts", function () {
     console.log("--- Test Started: Waiting for few minutes for results ---");
+    logger.info('--- Test Started: Waiting for few minutes for results ---');
+
+    logger.info('Setting timeout to 5mins');
     this.timeout(300000); // Allow 5mins for all tests inside this describe
 
     it("Find CLI Logs", async () => {
+        logger.debug('hyperexecute-cli.log file will be updated');
         fileOps.writeFile("hyperexecute-cli.log", fileContents);
 
         const results = {
@@ -33,6 +38,8 @@ describe("cli-log.test.ts", function () {
         };
 
         console.log(results);
+        logger.info(`Test completed`);
+        logger.debug(`${results}`);
         console.table(results);
 
         // Example: Add expectations

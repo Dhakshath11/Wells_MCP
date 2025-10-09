@@ -22,6 +22,7 @@ import { exec, execSync } from "child_process";
 import util from "util";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import logger from "./logger.js";
 
 const execAsync = util.promisify(exec);
 
@@ -33,42 +34,50 @@ const __dirname = dirname(__filename);
 const snooperPath = join(__dirname, "..", "..", "bin", "snooper");
 
 export const getFeatureFiles = (): string => {
-/**
- * Discover all feature files in the current directory for Java frameworks.
- * Uses the `snooper` binary to scan for `.feature` files.
- *
- * @returns {string} Newline-separated list of feature file paths.
- * @throws {Error} If the snooper binary fails or is missing.
- */
+    /**
+     * Discover all feature files in the current directory for Java frameworks.
+     * Uses the `snooper` binary to scan for `.feature` files.
+     *
+     * @returns {string} Newline-separated list of feature file paths.
+     * @throws {Error} If the snooper binary fails or is missing.
+     */
     try {
+        logger.debug(`Snooper path: ${snooperPath}`);
         const stdout = execSync(`${snooperPath} --featureFilePaths=. --frameWork=java`, {
             encoding: "utf-8",
             stdio: ["ignore", "pipe", "ignore"] // silence errors
         });
+        logger.info("Discovered feature files using snooper binary.");
+        logger.debug(`Snooper output: ${stdout}`);
         return stdout;
     }
     catch (error: any) {
+        logger.error("Error while executing snooper binary", error);
         throw new Error(`Error while executing snooper binary ${error.message}`)
     }
 }
 
 export const getFeatureFilesForTags = (tags: string): string => {
-/**
- * Discover feature files matching specific tags in the current directory for Java frameworks.
- * Uses the `snooper` binary with the `--specificTags` option.
- *
- * @param {string} tags - Comma-separated list of tags to filter feature files.
- * @returns {string} Newline-separated list of matching feature file paths.
- * @throws {Error} If the snooper binary fails or is missing.
- */
+    /**
+     * Discover feature files matching specific tags in the current directory for Java frameworks.
+     * Uses the `snooper` binary with the `--specificTags` option.
+     *
+     * @param {string} tags - Comma-separated list of tags to filter feature files.
+     * @returns {string} Newline-separated list of matching feature file paths.
+     * @throws {Error} If the snooper binary fails or is missing.
+     */
     try {
+        logger.debug(`Snooper path: ${snooperPath}`);
         const stdout = execSync(`${snooperPath} --featureFilePaths=. --frameWork=java --specificTags=${tags}`, {
             encoding: "utf-8",
             stdio: ["ignore", "pipe", "ignore"] // silence errors
         });
+        logger.info(`Discovered feature files for tags: ${tags}`);
+        logger.debug(`Snooper output: ${stdout.trim()}`);
         return stdout.trim();
     }
     catch (error: any) {
+        logger.error("Error while executing snooper binary for tags", error);
         throw new Error(`Error while executing snooper binary ${error.message}`)
     }
 }
@@ -81,31 +90,35 @@ export const getFeatureFilesForTags = (tags: string): string => {
  * 3. A pattern (e.g., *.feature)
  */
 export const findCommand = (INPUT: string): string => {
-/**
- * Discover files or folders based on a single input.
- * Input can be:
- *   1. A folder path
- *   2. A specific file path or file name
- *   3. A pattern (e.g., *.feature)
- * Uses shell find command for flexible discovery.
- *
- * @param {string} INPUT - The folder, file, or pattern to search for.
- * @returns {string} Newline-separated list of matching file paths.
- * @throws {Error} If the find command fails or input is invalid.
- */
+    /**
+     * Discover files or folders based on a single input.
+     * Input can be:
+     *   1. A folder path
+     *   2. A specific file path or file name
+     *   3. A pattern (e.g., *.feature)
+     * Uses shell find command for flexible discovery.
+     *
+     * @param {string} INPUT - The folder, file, or pattern to search for.
+     * @returns {string} Newline-separated list of matching file paths.
+     * @throws {Error} If the find command fails or input is invalid.
+     */
     try {
+        logger.info(`Executing find command for input: ${INPUT}`);
         // Escape double quotes for shell safety
         const escapedInput = INPUT.replace(/"/g, '\\"');
 
         // Build the command
         const cmd = `[ -d "${escapedInput}" ] && find "${escapedInput}" -type f || find . -type f \\( -path "${escapedInput}" -o -name "$(basename "${escapedInput}")" -o -name "${escapedInput}" \\)`;
+        logger.debug(`cmd command: ${cmd}`);
 
         // Execute the command
         const stdout = execSync(cmd, { encoding: "utf-8", stdio: ["pipe", "pipe", "ignore"] });
-
+        logger.info(`Executed find command for input: ${INPUT}`);
         // Split into array, remove empty lines, and trim
+        logger.debug(`Find output: ${stdout.trim()}`);
         return stdout.trim();
     } catch (error: any) {
+        logger.error("Error while executing find command", error);
         throw new Error(`Error while executing find command: ${error.message}`);
     }
 };

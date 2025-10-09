@@ -11,6 +11,7 @@
 import * as fs from "fs";
 import * as fileOps from '../../commons/fileOperations.js';
 import { exec } from "child_process";
+import logger from "../../commons/logger.js";
 
 /**
  * Type for log check event.
@@ -31,9 +32,10 @@ async function waitForLogMessage(
 ): Promise<boolean> {
     const filePath = fileOps.findFileAbsolutePath('.', 'hyperexecute-cli.log');
     if (!filePath) {
+        logger.error(`CLI Log file not found: hyperexecute-cli.log`);
         return Promise.resolve(false);
     }
-
+    logger.info(`Waiting for log message: '${searchString}' in ${filePath}`);
     return new Promise((resolve, reject) => {
         const start = Date.now();
         const timer = setInterval(() => {
@@ -41,6 +43,7 @@ async function waitForLogMessage(
                 // Always check timeout first
                 if (Date.now() - start > timeoutMs) {
                     clearInterval(timer);
+                    logger.error(`Timeout waiting for log message: '${searchString}'`);
                     return resolve(false); // timeout
                 }
 
@@ -48,11 +51,13 @@ async function waitForLogMessage(
                     const contents = fs.readFileSync(filePath, "utf-8");
                     if (contents.toLowerCase().includes(searchString.toLowerCase())) {
                         clearInterval(timer);
+                        logger.info(`Found log message: '${searchString}'`);
                         return resolve(true); // found string
                     }
                 }
             } catch (err) {
                 clearInterval(timer);
+                logger.error(`Error reading log file: ${err}`);
                 reject(err);
             }
         }, intervalMs);
@@ -69,7 +74,8 @@ async function checkLogForMessage(
 ): Promise<boolean> {
     try {
         return await waitForLogMessage(searchString, timeoutMs, intervalMs);
-    } catch {
+    } catch (err: any) {
+        logger.error(`Error in checkLogForMessage: ${err.message}`);
         return false;
     }
 }
@@ -123,9 +129,15 @@ async function getJobLink(): Promise<string> {
         const cleanContent = content.replace(/\u001b\[[0-9;]*m/g, "");
         // Extract the job link
         const jobLink = cleanContent.match(/Job Link:\s*(https?:\/\/\S+)/)?.[1];
+        if (jobLink) {
+            logger.info(`Extracted job link: ${jobLink}`);
+        } else {
+            logger.error(`Job link not found in log file.`);
+        }
         return jobLink || "Job link not found or not yet generated";
     }
     catch (error: any) {
+        logger.error(`Error extracting job link: ${error.message}`);
         return "Job link not found or not yet generated";
     }
 }
@@ -158,24 +170,26 @@ async function detectFirstCLIEvent(): Promise<string | null> {
  */
 async function runTest(username: string | undefined, accessKey: string | undefined): Promise<string> {
     try {
-        // Start the CLI command asynchronously, but don't await it
+        logger.info(`Running HyperExecute CLI with user: ${username}`);
         const childProcess = exec(`./hyperexecute --user ${username} --key ${accessKey} --config hyperexecute.yaml --no-track`);
 
         // Optional: capture stdout asynchronously -> Log for MCP Inspector
         let cliOutput = "";
         childProcess.stdout?.on("data", (chunk) => {
             cliOutput += chunk.toString();
-            console.error(chunk.toString());
+            logger.info(`CLI stdout: ${chunk.toString()}`);
         });
         childProcess.stderr?.on("data", (chunk) => {
-            console.error(chunk.toString());
+            logger.error(`CLI stderr: ${chunk.toString()}`);
         });
 
         // Delay for 5 seconds to form log file
         await new Promise(resolve => setTimeout(resolve, 5000));
+        logger.info(`CLI run complete.`);
         return cliOutput;
     }
     catch (error: any) {
+        logger.error(`Error occurred while running tests: ${error.message}`);
         throw new Error(`Error occurred while running tests: ${error.message}`);
     }
 }

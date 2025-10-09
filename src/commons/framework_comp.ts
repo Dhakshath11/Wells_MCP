@@ -10,6 +10,7 @@
 
 import * as fileOps from '../commons/fileOperations.js';
 import { Parser } from "xml2js";
+import logger from "./logger.js";
 
 /**
  * Detects test frameworks used in a project depending on the given package manager.
@@ -35,31 +36,44 @@ function framework_comp(packageManager: string): string[] {
         // Handle Node.js (package.json)
         if (["npm", "yarn", "pnpm"].includes(pm)) {
             const pkgJson = fileOps.findFileRelativePath('.', 'package.json');
-            if (!pkgJson) throw new Error('package.json file not found to get the test frameworks');
+            if (!pkgJson) {
+                logger.error('package.json file not found to get the test frameworks');
+                throw new Error('package.json file not found to get the test frameworks');
+            }
             const pkgJsonData = fileOps.getFileContent(pkgJson);
             const pkgData = JSON.parse(pkgJsonData);
+            logger.info('Extracting Node.js test frameworks from package.json');
             return extractNodeDependencies(pkgData);
 
             // Handle Maven (pom.xml)
         } else if (pm === 'maven') {
             const dependencyFile = fileOps.findFileRelativePath('.', 'pom.xml');
-            if (!dependencyFile) throw new Error('pom.xml file not found to get the test frameworks');
+            if (!dependencyFile) {
+                logger.error('pom.xml file not found to get the test frameworks');
+                throw new Error('pom.xml file not found to get the test frameworks');
+            }
             const dependencyFileData = fileOps.getFileContent(dependencyFile);
+            logger.info('Extracting Maven test frameworks from pom.xml');
             return extractMavenDependencies(dependencyFileData);
 
             // Handle Gradle (build.gradle)
         } else if (pm === 'gradle') {
             const dependencyFile = fileOps.findFileRelativePath('.', 'build.gradle');
-            if (!dependencyFile) throw new Error('build.gradle file not found to get the test frameworks');
+            if (!dependencyFile) {
+                logger.error('build.gradle file not found to get the test frameworks');
+                throw new Error('build.gradle file not found to get the test frameworks');
+            }
             const dependencyFileData = fileOps.getFileContent(dependencyFile);
+            logger.info('Extracting Gradle test frameworks from build.gradle');
             return extractGradleDependencies(dependencyFileData);
 
             // Unsupported package manager
         } else {
+            logger.warn(`Unsupported package manager: ${packageManager}`);
             return [];
         }
     } catch (error: any) {
-        console.error(error?.message || error);
+        logger.error('Error detecting test frameworks', error);
         return [];
     }
 }
@@ -85,6 +99,7 @@ const extractNodeDependencies = (pkg: any): string[] => {
     if (deps["vitest"]) frameworks.push(`vitest@${deps["vitest"]}`);
     if (deps["cypress"]) frameworks.push(`cypress@${deps["cypress"]}`);
 
+    logger.debug(`Node.js frameworks detected: ${frameworks.join(", ")}`);
     return frameworks;
 };
 
@@ -107,7 +122,7 @@ const extractMavenDependencies = (dependencyFileData: string): string[] => {
     // Parse XML (xml2js parseString is async but callback-based, so we wrap it synchronously here)
     parser.parseString(dependencyFileData, (err, result) => {
         if (err) {
-            console.error('Failed to parse pom.xml:', err);
+            logger.error('Failed to parse pom.xml', err);
             parsedXml = null;
         } else {
             parsedXml = result;
@@ -115,6 +130,7 @@ const extractMavenDependencies = (dependencyFileData: string): string[] => {
     });
 
     if (!parsedXml || !parsedXml.project || !parsedXml.project.dependencies || !parsedXml.project.dependencies.dependency) {
+        logger.warn('No dependencies found in pom.xml');
         return frameworks;
     }
 
@@ -130,6 +146,7 @@ const extractMavenDependencies = (dependencyFileData: string): string[] => {
         }
     }
 
+    logger.debug(`Maven frameworks detected: ${frameworks.join(", ")}`);
     return frameworks;
 };
 
@@ -157,6 +174,7 @@ const extractGradleDependencies = (dependencyFileData: string): string[] => {
         }
     }
 
+    logger.debug(`Gradle frameworks detected: ${frameworks.join(", ")}`);
     return frameworks;
 };
 

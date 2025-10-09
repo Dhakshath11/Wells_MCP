@@ -9,6 +9,7 @@
  */
 
 import * as fileOps from '../commons/fileOperations.js';
+import logger from "../commons/logger.js";
 
 /**
  * Adds or replaces the LambdaTest capabilities block in the Playwright config file.
@@ -39,10 +40,14 @@ const addCapabilities = (doc: string): string => {
             build: "Playwright Build 1"
         }
     };`;
-    if (!doc.includes('const capabilities')) { doc = capabilitiesBlock + '\n' + doc; }// To Appending capabilities block to the doc
-    else {
+    logger.debug(`Playwright capabilities: ${capabilitiesBlock}`);
+    if (!doc.includes('const capabilities')) {
+        doc = capabilitiesBlock + '\n' + doc;
+        logger.info('Appended LambdaTest capabilities block to Playwright config.');
+    } else {
         // Else replace the full capabilities block
         const regex = /const capabilities\s*=\s*{[\s\S]*?};/;
+        logger.info('Replaced existing capabilities block in Playwright config.');
         return doc.replace(regex, capabilitiesBlock.trim());
     }
     return doc;
@@ -74,8 +79,11 @@ const replaceProjectBlock = (doc: string): string => {
   },
   `;
 
+    logger.debug(`CDP endpoint: ${projectBlock}`);
+
     // Skip if the block is already present
     if (doc.includes(projectBlock)) {
+        logger.debug('LambdaTest project block already present in Playwright config.');
         return doc;
     }
 
@@ -106,6 +114,7 @@ const replaceProjectBlock = (doc: string): string => {
 
     if (startIndex === -1) {
         // Not found, append at end
+        logger.info('Appended LambdaTest project block to end of Playwright config.');
         return doc + "\nprojects: [" + projectBlock + "],\n";
     }
 
@@ -150,7 +159,7 @@ const replaceProjectBlock = (doc: string): string => {
         .join("\n");
 
     const updatedDoc = doc.slice(0, startIndex + 1) + "\n" + commentedOld + "\n" + projectBlock + doc.slice(endIndex - 1);
-
+    logger.info('Replaced existing projects block with LambdaTest project block in Playwright config.');
     return updatedDoc;
 }
 
@@ -173,9 +182,11 @@ function playwrightConfigSetup(): string {
         doc = replaceProjectBlock(doc);  // Post Adding capabilities block to the doc
 
         fileOps.writeFile(filePath, doc);
+        logger.info(`Playwright config updated for LambdaTest integration: ${filePath}`);
         return doc;
     }
     catch (error: any) {
+        logger.error('Error in playwrightConfigSetup', error);
         throw new Error(`Error in playwrightConfigSetup: ${error.message}`);
     }
 }
