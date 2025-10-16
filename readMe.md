@@ -1,7 +1,16 @@
 # Wells MCP HyperExecute Server
 
 ## Abstract
-This project implements a Model Context Protocol (MCP) server for orchestrating Playwright test automation on the LambdaTest HyperExecute platform. It provides a robust, extensible backend for running, analyzing, and managing Playwright tests in cloud environments, with support for YAML configuration, CLI integration, and LambdaTest credentials management.
+This project implements a Model Context Protocol (MCP) server for orchestrating Playwright test automation on the LambdaTest HyperExecute platform. It provides a robust, extensible backend for running, analyzing, and managing Playwright tests in cloud environments, with support for YAML configuration, CLI integration, LambdaTest credentials management, and production-grade logging and error handling.
+
+---
+
+## Key Features (2025 Framework Update)
+- **Centralized Logger Integration:** All major modules and server tools use a unified logger (`src/commons/logger.ts`) for info, warning, and error messages, improving traceability and debugging.
+- **Production-Ready Error Handling:** Error handling is standardized across all modules, with clear logging and error propagation for easier debugging and reliability.
+- **Extensible MCP Tooling:** New tools and modules should follow the logger and error handling pattern for consistency and maintainability.
+- **Improved Test Distribution & Analysis:** Playwright and Karate test distribution tools now provide deeper logging and error feedback for cloud orchestration.
+- **Enhanced Debugging:** All test suites and server modules are instrumented with logger calls, making it easier to trace issues during local and cloud test runs.
 
 ---
 
@@ -128,31 +137,31 @@ Update dependencies and scripts as needed for your project.
 
 ## Server Tools Overview
 
-The MCP server provides a set of tools to help you manage, analyze, and run Playwright tests on LambdaTest HyperExecute. Here’s a quick overview of each tool and what it does:
+The MCP server provides a set of tools to help you manage, analyze, and run Playwright tests on LambdaTest HyperExecute. All tools now include detailed logging and robust error handling for every operation.
 
 ### 1. check-hyperexecute-cli-present
-Checks if the HyperExecute CLI is installed in your project. Use this before running any analysis or tests.
+Checks if the HyperExecute CLI is installed in your project. Logs info and errors for CLI presence checks.
 
 ### 2. get-hyperexecute-cli
-Downloads the HyperExecute CLI if it’s missing, and checks if your LambdaTest credentials are set. Run this if the CLI is not present.
+Downloads the HyperExecute CLI if it’s missing, and checks if your LambdaTest credentials are set. Logs download status and credential checks.
 
 ### 3. run-hyperexecute-analyzer
-Runs the HyperExecute analyzer to inspect your project and return a summary of your test framework, runtime, and package manager. Requires the CLI to be installed.
+Runs the HyperExecute analyzer to inspect your project and return a summary of your test framework, runtime, and package manager. Requires the CLI to be installed. Logs all analysis steps and errors.
 
 ### 4. make-hyperexecute-compatible
-Updates your Playwright configuration and test files to ensure compatibility with HyperExecute. Automatically adds LambdaTest capabilities and updates imports.
+Updates your Playwright configuration and test files to ensure compatibility with HyperExecute. Automatically adds LambdaTest capabilities and updates imports. Logs all compatibility actions and errors.
 
 ### 5. create-hyperexecute-yaml-file
-Prompts you to enter your LambdaTest project name and ID, then generates a `hyperexecute.yaml` file tailored for your project. This file is required for running tests on HyperExecute.
+Prompts you to enter your LambdaTest project name and ID, then generates a `hyperexecute.yaml` file tailored for your project. This file is required for running tests on HyperExecute. Logs YAML creation and errors.
 
 ### 6. setup-lambdatest-credentials
-Lets you manually set your LambdaTest username and access key if they aren’t already set in your environment. Credentials are needed to run tests on LambdaTest.
+Lets you manually set your LambdaTest username and access key if they aren’t already set in your environment. Credentials are needed to run tests on LambdaTest. Logs credential setup and errors.
 
 ### 7. run-tests-on-hyperexecute
-Runs your Playwright tests on LambdaTest HyperExecute using the CLI, credentials, and YAML file. Automates the cloud test execution process.
+Runs your Playwright tests on LambdaTest HyperExecute using the CLI, credentials, and YAML file. Automates the cloud test execution process. Logs job trigger status and errors.
 
 ### 8. analyze-hyperexecute-cli-run
-Analyzes the CLI log after a test run to find your job link and check for errors. Helps you track your test job and troubleshoot issues.
+Analyzes the CLI log after a test run to find your job link and check for errors. Helps you track your test job and troubleshoot issues. Logs job analysis and errors.
 
 ### 9. test-distributer
 Discovers, groups, and distributes Playwright tests in your project. Lets you find tests by name, directory, group, or tag, and generates commands to run or update YAML configuration for distributed test execution. Useful for scaling and organizing large test suites.
@@ -207,6 +216,7 @@ VS Code debug configurations. Add or modify entries to debug server or test file
 - Use VS Code's Run & Debug panel with `launch.json` configurations.
 - Set breakpoints in any source file.
 - Debug the MCP server, test files, or utility scripts as needed.
+- All modules and tests now provide detailed logs for easier troubleshooting.
 
 ---
 
@@ -220,23 +230,19 @@ Follow these steps to use the MCP server in your own project:
   cd <your-local-project>
   npm install
   ```
-
 2. **Create a `.vscode` or `.cursor` directory in your local project:**
   This enables VS Code or Cursor IDE integration for debugging and agent queries.
-
 3. **Copy the `mcp.json` file from the MCP project into your local project:**
   This configures the MCP tools and server for your environment.
-
 4. **Go to the chat box and select the `mcp.json` by switching to agent mode:**
   This allows you to interact with the MCP agent for your project.
-
 5. **Query the agent with useful commands, such as:**
   - Check if CLI is installed?
   - Can you analyze this project?
   - Run the test in hyperexecute CLI
   - Analyze the test run and get me job ID
 
-These queries will trigger the corresponding MCP tools and workflows, automating your cloud test orchestration and analysis.
+These queries will trigger the corresponding MCP tools and workflows, automating your cloud test orchestration and analysis. All steps are logged for traceability.
 
 ---
 
@@ -247,8 +253,8 @@ These queries will trigger the corresponding MCP tools and workflows, automating
 ---
 
 ## Additional Notes
-- This project is designed for extensibility. Add new MCP tools by extending `HyperexecuteServer`.
-- All major modules and utilities are documented for maintainability.
+- This project is designed for extensibility. Add new MCP tools by extending `HyperexecuteServer` and following the logger/error handling pattern.
+- All major modules and utilities are documented and instrumented for maintainability and traceability.
 - For LambdaTest integration, ensure your credentials and CLI are up to date.
 - For Playwright support, update config and import utilities as needed for your test structure.
 
