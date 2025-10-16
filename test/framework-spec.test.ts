@@ -242,7 +242,7 @@ const runFrameworkAnalysisTest = (
 };
 
 // 🔹 Test cases
-runFrameworkAnalysisTest("Framework Analyze for NPM Project", `
+runFrameworkAnalysisTest("Framework Analyze for NPM Project ", `
 {"level":"debug","msg":"List of possible test files detected [tests/page_test.spec.js]"}
 {"level":"debug","msg":"detected 4 urls for repository , [https://www.lambdatest.com/capabilities-generator/ https://playwright.dev/docs/api/class-testconfig https://www.bing.com https://www.saucedemo.com/]"}
 {"level":"debug","msg":"Analysis Result {Language:JavaScript RuntimeVersion:v23.11.0 PackageManager:npm PackageManagerVersion:10.9.2 TestFrameworks:[] TestFiles:[tests/page_test.spec.js]}"}  
@@ -263,3 +263,10 @@ runFrameworkAnalysisTest("Framework Analyze for Maven Project", `
 `, {
   "pom.xml": pomXmlSample,
 });
+
+runFrameworkAnalysisTest("Framework Analyze '\\n' between lines as per new log", `
+{"level":"debug","msg":"List of possible test files detected [tests/page_test.spec.js]"}
+{"level":"debug","msg":"detected 4 urls for repository , [https://www.lambdatest.com/capabilities-generator/ https://playwright.dev/docs/api/class-testconfig https://www.bing.com https://www.saucedemo.com/]"}
+{"level":"debug","msg":"Analysis Result {Language:JavaScript RuntimeVersion:v23.11.0 PackageManager:npm PackageManagerVersion:10.9.2 TestFrameworks:[] TestFiles:[tests/page_test.spec.js]}"}  
+{"level":"debug","time":"2025-10-16T22:04:13.755+0530","caller":"reporter/reporter.go:47","msg":"Analysis Result {Language:JavaScript RuntimeVersion:v23.11.0\n\n PackageManager:npm PackageManagerVersion:10.9.2\n\n TestFrameworks:[] PrivateRegistry:[] PrivateEndpoints:[] InaccessibleURLs:[] ExternalReporters:[] TestFiles:[tests/page_test.spec.js] LangStat:[]}"}
+`);

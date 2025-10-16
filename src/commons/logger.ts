@@ -41,20 +41,17 @@ function getCallerInfo(): string {
     const err = new Error();
     const stack = err.stack?.split("\n") || [];
 
-    // stack[0] = "Error"
-    // stack[1] = line inside writeLog
-    // stack[2] = the actual caller of logger (we want this)
-    const callerLine = stack[3] || stack[2] || "";
-
-    // Extract file path and line number using regex
-    const match = callerLine.match(/\(?(.+):(\d+):\d+\)?$/);
-    if (match) {
-        const filePath = match[1];
-        const line = match[2];
-        const fileName = path.basename(filePath);
-        return `${fileName}:${line}`;
+    for (let i = 2; i < stack.length; i++) { // skip first 2 frames (Error + inside logger)
+        const line = stack[i];
+        if (!line.includes("logger.ts")) {
+            const match = line.match(/\(?(.+):(\d+):\d+\)?$/);
+            if (match) {
+                const filePath = match[1];
+                const lineNum = match[2];
+                return `${path.basename(filePath)}:${lineNum}`;
+            }
+        }
     }
-
     return "unknown:0";
 }
 

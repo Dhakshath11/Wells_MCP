@@ -52,11 +52,20 @@ class FrameworkSpecAnalyzer {
             logger.error(`File ${filePath} does not exist`);
             throw new Error(`File ${filePath} does not exist`);
         }
-        const data = fs.readFileSync(filePath, "utf-8");
-        const lines = data.trim().split("\n");
-        logger.info(`Read last line from ${filePath}`);
-        logger.debug(`As per hyper_log file: ${lines[lines.length - 1]}`);
-        return lines[lines.length - 1];
+        const data = fs.readFileSync(filePath, "utf-8").trim();
+        // Find the last JSON log entry (starts with {"level":)
+        const lastJsonIndex = data.lastIndexOf('{"level":');
+        if (lastJsonIndex === -1) {
+            logger.error(`No JSON log entry found`);
+            throw new Error("No JSON log entry found");
+        }
+        // Extract everything from the last {"level": till the end
+        const lastEntry = data.slice(lastJsonIndex).trim();
+
+        // Replace any newlines or extra spaces
+        const cleaned = lastEntry.replace(/\s*\n\s*/g, " ");
+        logger.debug(`As per hyper_log file: ${cleaned}`);
+        return cleaned;
     }
 
     /**
