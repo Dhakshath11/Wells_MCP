@@ -35,12 +35,37 @@ function getTimestamp(): string {
 }
 
 /**
+ * Utility: Extract the caller file and line number from stack trace
+ */
+function getCallerInfo(): string {
+    const err = new Error();
+    const stack = err.stack?.split("\n") || [];
+
+    // stack[0] = "Error"
+    // stack[1] = line inside writeLog
+    // stack[2] = the actual caller of logger (we want this)
+    const callerLine = stack[3] || stack[2] || "";
+
+    // Extract file path and line number using regex
+    const match = callerLine.match(/\(?(.+):(\d+):\d+\)?$/);
+    if (match) {
+        const filePath = match[1];
+        const line = match[2];
+        const fileName = path.basename(filePath);
+        return `${fileName}:${line}`;
+    }
+
+    return "unknown:0";
+}
+
+/**
  * Utility: Write a message to the log file (no console)
  */
 function writeLog(level: LogLevel, message: string, error?: unknown) {
     const timestamp = getTimestamp();
+    const caller = getCallerInfo();
     const formatted =
-        `${timestamp} | ${level.padEnd(5)} | ${message}` +
+        `${timestamp} | ${level.padEnd(5)} | [${caller}] ${message}` +
         (error instanceof Error ? ` | ${error.stack || error.message}` : "") +
         "\n";
 

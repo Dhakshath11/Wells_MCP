@@ -1,6 +1,6 @@
 {
   "name": "@dhakshath11/mcp-server",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "author": "Dhakshath Amin",
   "license": "ISC",
   "description": "MCP server on hyperexecute tool",
@@ -26,11 +26,13 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.4",
+    "@playwright/test": "^1.56.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.3.0",
     "@types/xml2js": "^0.4.14",
     "micromatch": "^4.0.8",
     "mocha": "^11.7.2",
+    "playwright": "^1.56.0",
     "xml2js": "^0.6.2",
     "yaml": "^2.8.1",
     "zod": "^3.25.76"

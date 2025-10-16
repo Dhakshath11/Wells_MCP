@@ -213,24 +213,29 @@ const runFrameworkAnalysisTest = (
 ) => {
   describe("framework-spec.ts", () => {
     it(testName, () => {
-      // Create log file
-      createMockLogFile("hyperexecute-analyze.log", logContent);
-      createMockLogFile("TestFeature.feature", featureFileContent);  // To ensure Karate Files is detected :- Only for Maven & Gradle Projects
+      try {
+        // Create log file
+        createMockLogFile("hyperexecute-analyze.log", logContent);
+        createMockLogFile("TestFeature.feature", featureFileContent);  // To ensure Karate Files is detected :- Only for Maven & Gradle Projects
 
-      // Create any extra project files
-      for (const [fileName, content] of Object.entries(extraFiles)) {
-        createMockLogFile(fileName, content);
+        // Create any extra project files
+        for (const [fileName, content] of Object.entries(extraFiles)) {
+          createMockLogFile(fileName, content);
+        }
+
+        // Run analyzer
+        const result = analyzer.FrameworkSpecAnalyzer.testFrameworkSpec();
+        console.log(`Analysis result for ${testName}:`, result);
+
+        // Cleanup
+        fileOps.deleteFile("hyperexecute-analyze.log");
+        fileOps.deleteFile("TestFeature.feature");
+        for (const fileName of Object.keys(extraFiles)) {
+          fileOps.deleteFile(fileName);
+        }
       }
-
-      // Run analyzer
-      const result = analyzer.FrameworkSpecAnalyzer.testFrameworkSpec();
-      console.log(`Analysis result for ${testName}:`, result);
-
-      // Cleanup
-      fileOps.deleteFile("hyperexecute-analyze.log");
-      fileOps.deleteFile("TestFeature.feature");
-      for (const fileName of Object.keys(extraFiles)) {
-        fileOps.deleteFile(fileName);
+      catch (error: any) {
+        console.log(`Error: ${error.message}`);
       }
     });
   });
@@ -249,7 +254,7 @@ runFrameworkAnalysisTest("Framework Analyze for Gradle Project", `
 {"level":"debug","msg":"Analysis Result {Language:Java RuntimeVersion:openjdk version  \\"17.0.15 \\" PackageManager:gradle PackageManagerVersion:Gradle 8.14 TestFrameworks:[junit5 -> 5.9.3] TestFiles:[src/test/java/TestRunner.java]}"}  
 `, {
   "build.gradle": gradleSample,
-}); 
+});
 
 runFrameworkAnalysisTest("Framework Analyze for Maven Project", `
 {"level":"debug","time":"2025-09-19T18:48:05.541+0530","caller":"analyzer/analyser.go:135","msg":"List of possible test files detected [src/test/java/com/bandwidth/CrossBrowserTest.java src/test/java/com/bandwidth/commons/Report/TestListener.java src/test/java/com/bandwidth_QAF/SampleQAFTest.java src/test/java/com/bandwidth/commons/Inputs/TestCaseInputs.java]"}

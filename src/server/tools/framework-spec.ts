@@ -133,19 +133,21 @@ class FrameworkSpecAnalyzer {
      * @returns An array of unique test framework names relevant to the project.
      */
     private getTestFrameworks(packageManager: string, testFrameworksMatch: RegExpMatchArray | null): string[] {
+        logger.debug(`Getting test frameworks for ${packageManager} & ${testFrameworksMatch}`);
         const safePM = packageManager?.trim().toLowerCase() ?? "";
         let testFrameworks: string[] = [];
 
         // Extract frameworks from log if present
         const normalized = testFrameworksMatch ? this.normalizeFrameworks(testFrameworksMatch[1]) : [];
+        logger.debug(`Normalized frameworks: ${normalized}`);
 
-        // Extract frameworks from package manager (Maven/Gradle) if needed
-        const pmFrameworks = (safePM === "maven" || safePM === "gradle" || normalized.length === 0)
-            ? framework_comp(safePM)
-            : [];
+        // Always extract frameworks from the package manager if known
+        const pmFrameworks = framework_comp(safePM);
+        logger.debug(`Frameworks from package manager: ${pmFrameworks}`);
 
         // Merge & dedupe if both exist
         testFrameworks = Array.from(new Set([...normalized, ...pmFrameworks]));
+        logger.debug(`Test frameworks: ${testFrameworks}`);
         return testFrameworks;
     }
 
