@@ -85,6 +85,7 @@ function framework_comp(packageManager: string): string[] {
  * @returns Array of detected frameworks like ["playwright@1.40.0", "jest@29.7.0"]
  */
 const extractNodeDependencies = (pkg: any): string[] => {
+    logger.debug(`Going to extract Node Dependencies`);
     const deps = {
         ...pkg.dependencies,
         ...pkg.devDependencies,
@@ -110,6 +111,7 @@ const extractNodeDependencies = (pkg: any): string[] => {
  * @returns Array of detected frameworks like ["selenium-java@4.30.0", "karate-core@1.4.1"]
  */
 const extractMavenDependencies = (dependencyFileData: string): string[] => {
+    logger.debug(`Going to extract Maven Dependencies`);
     const frameworks: string[] = [];
     let parsedXml: any = null;
 
@@ -146,7 +148,11 @@ const extractMavenDependencies = (dependencyFileData: string): string[] => {
         }
     }
 
-    logger.debug(`Maven frameworks detected: ${frameworks.join(", ")}`);
+    if (frameworks.length === 0) {
+        logger.debug(`No known test frameworks detected in Maven dependencies`);
+    } else {
+        logger.debug(`Detected test frameworks for Maven: ${frameworks.join(", ")}`);
+    }
     return frameworks;
 };
 
@@ -160,6 +166,7 @@ const extractMavenDependencies = (dependencyFileData: string): string[] => {
  * @returns Array of detected frameworks like ["selenium-java@4.35.0", "karate-junit5@1.4.1"]
  */
 const extractGradleDependencies = (dependencyFileData: string): string[] => {
+    logger.debug(`Going to extract Gradle Dependencies`);
     // Regex to capture groupId:artifactId:version inside quotes
     const regex = /["'`]([\w\.\-]+):([\w\.\-]+):([\w\.\-]+)["'`]/g;
     const frameworks: string[] = [];
@@ -174,7 +181,11 @@ const extractGradleDependencies = (dependencyFileData: string): string[] => {
         }
     }
 
-    logger.debug(`Gradle frameworks detected: ${frameworks.join(", ")}`);
+    if (frameworks.length === 0) {
+        logger.debug(`No known test frameworks detected in Gradle dependencies`);
+    } else {
+        logger.debug(`Detected test frameworks for Gradle: ${frameworks.join(", ")}`);
+    }
     return frameworks;
 };
 
@@ -182,8 +193,8 @@ const extractGradleDependencies = (dependencyFileData: string): string[] => {
  * Filters dependencies to only include supported test frameworks.
  *
  * Supported groupIds:
- * - com.intuit.karate (Karate)
- * - org.seleniumhq.selenium (Selenium)
+ * - com.intuit.karate & io.karatelabs (Karate)
+ * - org.seleniumhq.selenium & org.seleniumhq.selenium (Selenium)
  * - com.qmetry (QAF)
  *
  * @param groupId - The dependency groupId string.
@@ -191,8 +202,10 @@ const extractGradleDependencies = (dependencyFileData: string): string[] => {
  */
 const isTestFramework = (groupId: string): boolean => {
     return (
+        groupId.startsWith("io.karatelabs") ||
         groupId.startsWith("com.intuit.karate") ||
         groupId.startsWith("org.seleniumhq.selenium") ||
+        groupId.startsWith("com.seleniumhq.selenium") ||
         groupId.startsWith("com.qmetry")
     );
 };

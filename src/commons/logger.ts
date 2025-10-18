@@ -43,7 +43,7 @@ function getCallerInfo(): string {
 
     for (let i = 2; i < stack.length; i++) { // skip first 2 frames (Error + inside logger)
         const line = stack[i];
-        if (!line.includes("logger.ts")) {
+        if (!line.includes("logger")) {
             const match = line.match(/\(?(.+):(\d+):\d+\)?$/);
             if (match) {
                 const filePath = match[1];
