@@ -6,7 +6,7 @@
  * Author: Dhakshath Amin
  * Date: 9 October 2025
  * Description:
- *   - Provides a single persistent log file: hyper-mcp-server.log
+ *   - Provides a single persistent log file: hyperex_mcp.log
  *   - Appends all logs with timestamp and log level (info, warn, debug, error)
  *   - File-only logging (no console output)
  *   - Includes cleanup method to remove log lines older than 7 days
@@ -22,7 +22,7 @@
 import fs from "fs";
 import path from "path";
 
-const LOG_FILE = path.join(process.cwd(), "hyper-mcp-server.log");
+const LOG_FILE = path.join(process.cwd(), "hyperex_mcp.log");
 
 type LogLevel = "INFO" | "DEBUG" | "WARN" | "ERROR";
 

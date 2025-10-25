@@ -16,9 +16,9 @@ import { fileURLToPath } from "url";
 import logger from "./commons/logger.js";
 
 function showHelp() {
-  logger.info("Showing help message for hyper-mcp-server.");
+  logger.info("Showing help message for hyperex.");
   console.log(`
-Usage: npx hyper-mcp-server [options]
+Usage: npx hyperex [options]
 
 Options:
   --help            Show this help message
@@ -35,11 +35,11 @@ To run the MCP server:
 
 {
   "mcpServers": {
-    "playwright-mcp": {
-      "command": "npx hyper-mcp-server",
+    "mcp-server": {
+      "command": "npx hyperex",
       "env": {},
       "cwd": ".",
-      "description": "MCP server for Playwright project"
+      "description": "MCP server for HyperExecute and LambdaTest integration"
     }
   }
 }
@@ -72,15 +72,15 @@ function getVersion(): string {
 
 async function main() {
   const args = process.argv.slice(2);
-  logger.info(`Starting hyper-mcp-server with args: ${args.join(' ')}`);
+  logger.info(`Starting hyperex with args: ${args.join(' ')}`);
   if (args.includes("--help")) {
     showHelp();
     process.exit(0);
   }
   if (args.includes("--version")) {
     const version = getVersion();
-    logger.info(`hyper-mcp-server version: ${version}`);
-    console.log(`hyper-mcp-server version ${version}`);
+    logger.info(`hyperex version: ${version}`);
+    console.log(`hyperex version ${version}`);
     process.exit(0);
   }
   logger.info("--- Instantiating HyperexecuteServer... ---");

@@ -9,5 +9,5 @@ mask*
 dist
 .npmrc
 snooper.log
-hyper-mcp-server.log
+hyperex_mcp.log
 cucumber_context.json

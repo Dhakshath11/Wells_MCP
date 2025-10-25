@@ -36,37 +36,49 @@ This MCP server enables Playwright test execution and analysis on LambdaTest's H
 ---
 
 ## Directory & File Structure
-```
-Wells_MCP/
-├── src/
+
+```text
+.
+├── ReadMe.md
+├── bin
+│   └── snooper
+├── package.json
+├── src
+│   ├── commons
+│   │   ├── cmdOperations.ts
+│   │   ├── fileOperations.ts
+│   │   ├── framework_comp.ts
+│   │   ├── gradle
+│   │   │   └── gradle-setup.ts
+│   │   ├── ignore.ts
+│   │   ├── logger.ts
+│   │   └── maven
+│   │       └── maven-setup.ts
+│   ├── karate-setup
+│   │   └── karate-test-distributer.ts
 │   ├── main.ts
-│   ├── server/
-│   │   ├── HyperexecuteServer.ts
-│   │   └── tools/
-│   │       ├── cli-log.ts
-│   │       ├── framework-spec.ts
-│   │       ├── yaml-creator.ts
-│   ├── commons/
-│   │   └── fileOperations.ts
-│   ├── playwright-setup/
+│   ├── playwright-setup
 │   │   ├── playwright-config-setup.ts
 │   │   ├── playwright-lambdatest-setup.ts
 │   │   └── playwright-test-distributer.ts
-│   ├── normalizer.ts
-│   └── analyzer.ts
-├── test/
+│   ├── resources
+│   │   └── download-file.ts
+│   └── server
+│       ├── HyperexecuteServer.ts
+│       └── tools
+│           ├── cli-log.ts
+│           ├── framework-spec.ts
+│           └── yaml-creator.ts
+├── test
 │   ├── cli-log.test.ts
 │   ├── config-update.test.ts
 │   ├── framework-spec.test.ts
 │   ├── import-update.test.ts
-│   ├── normalizer.test.ts
-│   ├── yaml-creator.test.ts
-├── hyperexecute.yaml
-├── package.json
-├── mcp.json
-├── .vscode/
-│   └── launch.json
-└── README.md
+│   ├── karateTest-distributer.test.ts
+│   ├── logger.test.ts
+│   ├── playwrightTest-distributer.test.ts
+│   └── yaml-creator.test.ts
+└── tsconfig.json
 ```
 
 ---
@@ -163,10 +175,14 @@ Runs your Playwright tests on LambdaTest HyperExecute using the CLI, credentials
 ### 8. analyze-hyperexecute-cli-run
 Analyzes the CLI log after a test run to find your job link and check for errors. Helps you track your test job and troubleshoot issues. Logs job analysis and errors.
 
-### 9. test-distributer
-Discovers, groups, and distributes Playwright tests in your project. Lets you find tests by name, directory, group, or tag, and generates commands to run or update YAML configuration for distributed test execution. Useful for scaling and organizing large test suites.
+### 9. playwright-test-distributer
+Discovers, groups, and distributes Playwright tests in your project. Lets you find tests by name, directory, group, or tag, and generates commands to run or update YAML configuration for distributed Playwright test execution. Useful for scaling and organizing large Playwright test suites.
+
+### 10. karate-test-distributer
+Discovers, groups, and distributes Karate tests in your project. Lets you find Karate tests by name, directory, group, or tag, and generates commands to run or update YAML configuration for distributed Karate test execution. Useful for scaling and organizing large Karate test suites.
 
 ---
+
 ### src/main.ts
 Entry point. Instantiates and starts the `HyperexecuteServer`.
 
@@ -182,9 +198,29 @@ Analyzes framework specifications and parses analysis logs for test framework, r
 ### src/server/tools/yaml-creator.ts
 Creates and updates `hyperexecute.yaml` files, including project metadata and test runner commands.
 
+### src/commons/cmdOperations.ts
+Command-line operations and utilities for executing shell commands and managing CLI interactions.
+
 ### src/commons/fileOperations.ts
 File system utilities for reading, writing, searching, and deleting files, plus relative import path calculation.
 
+### src/commons/framework_comp.ts
+Framework compatibility helpers and utilities for MCP server modules.
+
+### src/commons/gradle/gradle-setup.ts
+Gradle build tool setup and integration utilities.
+
+### src/commons/ignore.ts
+Manages ignore rules and patterns for file operations and test discovery.
+
+### src/commons/logger.ts
+Centralized logging utilities for all modules and server tools.
+
+### src/commons/maven/maven-setup.ts
+Maven build tool setup and integration utilities.
+
+### src/karate-setup/karate-test-distributer.ts
+Discovers and distributes Karate tests in the project. Provides helpers for test directories, shell commands, and grouping/tagging for Karate test runs.
 
 ### src/playwright-setup/playwright-config-setup.ts
 Updates Playwright config files to add LambdaTest capabilities and project blocks for cloud execution.
@@ -195,8 +231,19 @@ Replaces Playwright imports in test files with LambdaTest setup imports and comm
 ### src/playwright-setup/playwright-test-distributer.ts
 Discovers and distributes Playwright tests in the project. Provides helpers to determine test directories, generate shell commands for test discovery, and support test grouping/tagging for efficient test runs. Integrates with MCP server tools for advanced test orchestration.
 
+### src/resources/download-file.ts
+Utility for downloading files and resources required by the MCP server or test setup.
+
 ### test/
-Contains test suites for each major module, validating functionality and integration.
+Contains test suites for each major module, validating functionality and integration:
+  - cli-log.test.ts
+  - config-update.test.ts
+  - framework-spec.test.ts
+  - import-update.test.ts
+  - karateTest-distributer.test.ts
+  - logger.test.ts
+  - playwrightTest-distributer.test.ts
+  - yaml-creator.test.ts
 
 ### hyperexecute.yaml
 Configuration file for LambdaTest HyperExecute runs. Generated and updated by the MCP server tools.
@@ -209,6 +256,9 @@ MCP server configuration. Modify to register new tools, change server name, or a
 
 ### .vscode/launch.json
 VS Code debug configurations. Add or modify entries to debug server or test files.
+
+### tsconfig.json
+TypeScript configuration file for compiler options and project structure.
 
 ---
 
