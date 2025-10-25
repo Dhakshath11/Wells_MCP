@@ -43,7 +43,6 @@ async function waitForLogMessage(
                 // Always check timeout first
                 if (Date.now() - start > timeoutMs) {
                     clearInterval(timer);
-                    logger.error(`Timeout waiting for log message: '${searchString}'`);
                     return resolve(false); // timeout
                 }
 

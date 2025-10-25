@@ -33,7 +33,8 @@ const include_GradleDependency = (dependencyToAdd: string): void => {
     const buildGradle = fileOps.getFileContent(gradleFile);
 
     // Avoid duplicate addition
-    if (!buildGradle.includes(dependencyToAdd)) {
+    if (!buildGradle.toLowerCase().includes(dependencyToAdd.toLowerCase())) {
+        logger.debug(`Going to add: ${dependencyToAdd}`);
         const marker = 'dependencies {';
 
         if (!buildGradle.includes(marker)) {

@@ -31,7 +31,8 @@ const include_MavenDependency = (dependencyToAdd: string, artifactId: string): v
     const POM = fileOps.getFileContent(pomFile);
 
     // Avoid duplicate addition
-    if (!POM.toLowerCase().includes(`<artifactId>${artifactId.toLowerCase()}</artifactId>`)) {
+    if (!POM.toLowerCase().includes(`<artifactId>${artifactId}</artifactId>`.toLowerCase())) {
+        logger.debug(`Going to add: ${artifactId}`);
         const marker = '</dependencies>';
 
         if (!POM.includes(marker)) { //SafeCheck

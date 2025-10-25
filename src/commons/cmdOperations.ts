@@ -48,7 +48,7 @@ export const getFeatureFiles = (): string => {
             stdio: ["ignore", "pipe", "ignore"] // silence errors
         });
         logger.info("Discovered feature files using snooper binary.");
-        logger.debug(`Snooper output: ${stdout}`);
+        logger.debug(`Snooper output:\n ${stdout}`);
         return stdout;
     }
     catch (error: any) {
@@ -73,7 +73,7 @@ export const getFeatureFilesForTags = (tags: string): string => {
             stdio: ["ignore", "pipe", "ignore"] // silence errors
         });
         logger.info(`Discovered feature files for tags: ${tags}`);
-        logger.debug(`Snooper output: ${stdout.trim()}`);
+        logger.debug(`Snooper output:\n ${stdout.trim()}`);
         return stdout.trim();
     }
     catch (error: any) {

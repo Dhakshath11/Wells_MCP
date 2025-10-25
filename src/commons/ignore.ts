@@ -64,7 +64,7 @@ const ignore = (): void => {
         "node_modules/",
         ".m2/",
         ".gradle/",
-        "Target"
+        "target"
     ];
 
     let updated = false;

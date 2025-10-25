@@ -491,7 +491,8 @@ export class HyperexecuteServer {
                  • For tags → provide the tag name (e.g. "@smoke").
                  • For names → provide the test description keyword (e.g. "login").
                  • For parallel-test or group-test → provide the test directory (e.g. "tests").
-                   (must be entered manually, cannot be inferred)`
+                   (must be entered manually, cannot be inferred)
+                 Also, supports multiple value for each type.`
                 ),
             },
             async ({ testDistributor, testDistributorValue }) => {
@@ -587,7 +588,8 @@ export class HyperexecuteServer {
                     .describe(
                         `Select distribution mode (case-insensitive):
                    • tags → Run tests with a specific @tags on separate machines.
-                   • feature-files → Run scenarios from feature files on separate machines.`
+                   • feature-files → Run scenarios from feature files on separate machines.
+                   Also, supports multiple value for each type.`
                     ),
 
                 testDistributorValue: z.string().describe(
